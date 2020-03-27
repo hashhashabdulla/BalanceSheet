@@ -7,15 +7,16 @@ using System.Threading.Tasks;
 
 namespace BalanceSheet.Model
 {
-    public class Customer : INotifyPropertyChanged
+    public class Transaction : INotifyPropertyChanged
     {
         private string _customerName;
-        private double _totalReceived;
-        private double _totalPaid;
-        private double _totalBalance;
+        private string _description;
+        private double _received;
+        private double _paid;
+        private double _amount;
         private DateTime? _createDate;
         private DateTime? _modDate;
-        
+
         public string CustomerName
         {
             get { return _customerName; }
@@ -28,39 +29,51 @@ namespace BalanceSheet.Model
                 }
             }
         }
-        public double TotalReceived
+        public string Description
         {
-            get { return _totalReceived; }
+            get { return _description; }
             set
             {
-                if (value != _totalReceived)
+                if (value != _description)
                 {
-                    _totalReceived = value;
-                    OnPropertyChanged("TotalReceived");
+                    _description = value;
+                    OnPropertyChanged("Description");
                 }
             }
         }
-        public double TotalPaid
+        public double Received
         {
-            get { return _totalPaid; }
+            get { return _received; }
             set
             {
-                if (value != _totalPaid)
+                if (value != _received)
                 {
-                    _totalPaid = value;
-                    OnPropertyChanged("TotalPaid");
+                    _received = value;
+                    OnPropertyChanged("Received");
                 }
             }
         }
-        public double TotalBalance
+        public double Paid
         {
-            get { return _totalBalance; }
+            get { return _paid; }
             set
             {
-                if (value != _totalBalance)
+                if (value != _paid)
                 {
-                    _totalBalance = value;
-                    OnPropertyChanged("TotalBalance");
+                    _paid = value;
+                    OnPropertyChanged("Paid");
+                }
+            }
+        }
+        public double Amount
+        {
+            get { return _amount; }
+            set
+            {
+                if (value != _amount)
+                {
+                    _amount = value;
+                    OnPropertyChanged("Amount");
                 }
             }
         }

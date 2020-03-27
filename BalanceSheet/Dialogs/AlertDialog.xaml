@@ -15,7 +15,8 @@
             <Button
                 Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                 Margin="5 10 10 10"
-                materialDesign:RippleAssist.IsDisabled="True">
+                materialDesign:RippleAssist.IsDisabled="True"
+                Focusable="False">
                 <materialDesign:PackIcon Kind="AlertCircleOutline" 
                     Height="40"
                     Width="40"
@@ -36,7 +37,8 @@
             Command="{x:Static wpf:DialogHost.CloseDialogCommand}"
             Width="150"
             HorizontalAlignment="Center"
-            Margin="0 0 0 10">
+            Margin="0 0 0 10"
+            Focusable="False">
             <Button.CommandParameter>
                 <system:Boolean>True</system:Boolean>
             </Button.CommandParameter>

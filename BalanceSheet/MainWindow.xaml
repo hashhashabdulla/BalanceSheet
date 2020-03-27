@@ -4,11 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BalanceSheet"
+        xmlns:localViewModel="clr-namespace:BalanceSheet.ViewModel"
         mc:Ignorable="d"
-        Title="Balance Sheet" Height="720" Width="1280"
+        Title="Balance Sheet"
+        Height="720"
+        Width="1280"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converter="clr-namespace:BalanceSheet.Converter"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
@@ -16,6 +21,39 @@
         TextOptions.TextRenderingMode="Auto"
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}">
+    <Window.Resources>
+        <converter:AmountToColorConverter x:Key="AmountToColorConverter" />
+        <converter:AmountSymbolConverter x:Key="AmountSymbolConverter" />
+
+        <CollectionViewSource Source="{Binding CustomerTransactionsList}"
+                              x:Key="CustomerTransactionsListSortByDate">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="CreateDate"
+                                     Direction="Descending" />
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+        <CollectionViewSource Source="{Binding TransactionsList}"
+                              x:Key="TransactionsListSortByDate">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="CreateDate"
+                                     Direction="Descending" />
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+
+        <Style x:Key="CellRightAlign"
+               TargetType="DataGridCell">
+            <Setter Property="Control.HorizontalAlignment"
+                    Value="Right" />
+            <Setter Property="Control.VerticalAlignment"
+                    Value="Center" />
+        </Style>
+        <Style x:Key="HeaderCenterAlign"
+               TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}">
+            <Setter Property="Control.HorizontalAlignment"
+                    Value="Center" />
+        </Style>
+    </Window.Resources>
     <materialDesign:DialogHost Identifier="RootDialog">
         <DockPanel>
             <!--<Menu DockPanel.Dock="Top">
@@ -43,245 +81,196 @@
             </MenuItem>
         </Menu>-->
             <Grid DockPanel.Dock="Top"
-              VerticalAlignment="Top"
-              Height="auto">
+                  VerticalAlignment="Top"
+                  Height="auto">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel HorizontalAlignment="Left"
-                        Orientation="Horizontal"
-                        Grid.Column="0"
-                        Margin="5">
+                            Orientation="Horizontal"
+                            Grid.Column="0"
+                            Margin="5">
                     <ComboBox materialDesign:HintAssist.Hint="Select Customer"
-                          Width="200"
-                          VerticalAlignment="Bottom"
-                          Margin="5"/>
+                              Width="200"
+                              VerticalAlignment="Bottom"
+                              Margin="5"
+                              ItemsSource="{Binding CustomerList}"
+                              DisplayMemberPath="CustomerName"
+                              SelectedValuePath="CustomerName"
+                              SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
                     <Button x:Name="btnAddCustomer"
-                                Grid.Row="0"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                ToolTip="New Customer"
-                                Margin="10 5 5 5"
-                                Command="{Binding CreateNewCustomerCommand}">
-                        <materialDesign:PackIcon 
-                                    Kind="PersonAddOutline"
-                                    Height="24"
-                                    Width="24"/>
+                            Grid.Row="0"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            ToolTip="New Customer"
+                            Margin="10 5 5 5"
+                            Command="{Binding CreateNewCustomerCommand}">
+                        <materialDesign:PackIcon Kind="PersonAddOutline"
+                                                 Height="24"
+                                                 Width="24" />
                     </Button>
                     <Button x:Name="btnDeleteCustomer"
-                                Grid.Row="0"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                ToolTip="Delete Customer"
-                                Margin="5">
-                        <materialDesign:PackIcon 
-                                    Kind="UserMinusOutline"
-                                    Height="24"
-                                    Width="24"/>
+                            Grid.Row="0"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            ToolTip="Delete Customer"
+                            Margin="5">
+                        <materialDesign:PackIcon Kind="UserMinusOutline"
+                                                 Height="24"
+                                                 Width="24" />
+                    </Button>
+
+                    <Button HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                            ToolTip="Delete Customer"
+                            Margin="5"
+                            Command="{Binding PrintClick}">
+                        <materialDesign:PackIcon Kind="Printer"
+                                                 Height="24"
+                                                 Width="24" />
                     </Button>
                 </StackPanel>
 
                 <StackPanel HorizontalAlignment="Right"
-                        Orientation="Horizontal"
-                        Grid.Column="1">
+                            Orientation="Horizontal"
+                            Grid.Column="1">
                     <TextBlock Text="Dark Mode"
-                           Margin="10 10 3 10"
-                           VerticalAlignment="Center"/>
+                               Margin="10 10 3 10"
+                               VerticalAlignment="Center" />
                     <ToggleButton Margin="3 10 10 10"
-                              VerticalAlignment="Center"
-                              Command="{Binding ThemeToggleCommand}"
-                              IsChecked="{Binding DarkThemeEnabled}"/>
+                                  VerticalAlignment="Center"
+                                  Command="{Binding ThemeToggleCommand}"
+                                  IsChecked="{Binding DarkThemeEnabled}" />
                 </StackPanel>
             </Grid>
             <Grid DockPanel.Dock="Top">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width=".35*"/>
-                    <ColumnDefinition Width=".65*"/>
+                    <ColumnDefinition Width=".35*" />
+                    <ColumnDefinition Width=".65*" />
                 </Grid.ColumnDefinitions>
 
                 <GroupBox Grid.Row="0"
-                      Grid.Column="0"
-                      Margin="5"
-                      Style="{DynamicResource MaterialDesignGroupBox}"
-                      materialDesign:ColorZoneAssist.Mode="Accent">
+                          Grid.Column="0"
+                          Margin="5"
+                          Style="{DynamicResource MaterialDesignGroupBox}"
+                          materialDesign:ColorZoneAssist.Mode="Accent"
+                          Header="{Binding}">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
                                 <Button x:Name="btnAddNewEntry"
-                            Grid.Row="0"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                            ToolTip="New Entry"
-                            Margin="5">
-                                    <materialDesign:PackIcon 
-                                Kind="Plus"
-                                Height="24"
-                                Width="24"/>
+                                        Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        ToolTip="New Entry"
+                                        Margin="5"
+                                        Command="{Binding CreateNewCustomerEntry}">
+                                    <materialDesign:PackIcon Kind="Plus"
+                                                             Height="24"
+                                                             Width="24" />
                                 </Button>
                                 <Button x:Name="btnEditEntry"
-                            Grid.Row="0"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                            ToolTip="New Entry"
-                            Margin="5">
-                                    <materialDesign:PackIcon 
-                                Kind="Pencil"
-                                Height="24"
-                                Width="24"/>
+                                        Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        ToolTip="New Entry"
+                                        Margin="5">
+                                    <materialDesign:PackIcon Kind="Pencil"
+                                                             Height="24"
+                                                             Width="24" />
                                 </Button>
                                 <Button x:Name="btnDeleteEntry"
-                            Grid.Row="0"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                            ToolTip="New Entry"
-                            Margin="5">
-                                    <materialDesign:PackIcon 
-                                Kind="Delete"
-                                Height="24"
-                                Width="24"/>
+                                        Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        ToolTip="New Entry"
+                                        Margin="5">
+                                    <materialDesign:PackIcon Kind="Delete"
+                                                             Height="24"
+                                                             Width="24" />
                                 </Button>
-                                <TextBlock 
-                                Style="{StaticResource MaterialDesignHeadlineTextBlock}"
-                                Margin="15 5 5 5"
-                                VerticalAlignment="Center">
-                                John Doe
-                                </TextBlock>
+                                <materialDesign:Chip Margin="15 0 5 0"
+                                                     VerticalAlignment="Stretch"
+                                                     FontSize="18"
+                                                     Background="{DynamicResource MaterialDesignChipBackground}"
+                                                     Foreground="{DynamicResource MaterialDesignBody}"
+                                                     Content="{Binding SelectedCustomer.CustomerName}"
+                                                     Icon="{Binding CustomerFirstLetter}" />
                             </StackPanel>
                         </DataTemplate>
                     </GroupBox.HeaderTemplate>
-                    <Grid>
+                    <Grid DataContext="{Binding}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="auto" />
                         </Grid.RowDefinitions>
 
                         <DataGrid x:Name="dataGridCustomerRecords"
-                         Grid.Row="0"
-                         VerticalAlignment="Stretch"
-                         Margin="5"
-                         materialDesign:DataGridAssist.CellPadding="13 8 8 8"
-                         materialDesign:DataGridAssist.ColumnHeaderPadding="8"
-                         ColumnWidth="*">
+                                  Grid.Row="0"
+                                  VerticalAlignment="Stretch"
+                                  Margin="5"
+                                  materialDesign:DataGridAssist.CellPadding="13 8 8 8"
+                                  materialDesign:DataGridAssist.ColumnHeaderPadding="8"
+                                  ColumnWidth="*"
+                                  ItemsSource="{Binding Source={StaticResource CustomerTransactionsListSortByDate}}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False">
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn
-                            Binding="{Binding IsSelected}"
-                            ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
-                            EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
-                            Width="auto">
+                                <DataGridCheckBoxColumn Binding="{Binding IsSelected}"
+                                                        ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
+                                                        EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
+                                                        Width="auto">
                                     <DataGridCheckBoxColumn.Header>
                                         <!--padding to allow hit test to pass thru for sorting -->
-                                        <Border
-                                    Background="Transparent"
-                                    Padding="6 0 6 0"
-                                    HorizontalAlignment="Center">
-                                            <CheckBox
-                                        HorizontalAlignment="Center" />
+                                        <Border Background="Transparent"
+                                                Padding="6 0 6 0"
+                                                HorizontalAlignment="Center">
+                                            <CheckBox HorizontalAlignment="Center" />
                                         </Border>
                                     </DataGridCheckBoxColumn.Header>
                                 </DataGridCheckBoxColumn>
                                 <DataGridTextColumn Header="Date"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
+                                                    Width="0.20*"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding CreateDate,StringFormat=dd/MM/yy}"
+                                                    IsReadOnly="True"
+                                                    SortDirection="Descending" />
                                 <DataGridTextColumn Header="Description"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
+                                                    Width="0.55*"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding Description}"
+                                                    IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="TextWrapping"
+                                                    Value="Wrap" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Amount"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </GroupBox>
-
-                <GroupBox
-                Grid.Row="0"
-                Grid.Column="1"
-                Style="{DynamicResource MaterialDesignCardGroupBox}"
-                Margin="5">
-                    <GroupBox.HeaderTemplate>
-                        <DataTemplate>
-                            <StackPanel
-                            Orientation="Horizontal">
-                                <Button
-                                Grid.Row="0"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
-                                ToolTip="New Entry"
-                                Margin="5">
-                                    <materialDesign:PackIcon 
-                                    Kind="Plus"
-                                    Height="24"
-                                    Width="24"/>
-                                </Button>
-                                <Button
-                                Grid.Row="0"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
-                                ToolTip="New Entry"
-                                Margin="5">
-                                    <materialDesign:PackIcon 
-                                    Kind="Pencil"
-                                    Height="24"
-                                    Width="24"/>
-                                </Button>
-                                <Button
-                                Grid.Row="0"
-                                HorizontalAlignment="Left"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
-                                ToolTip="New Entry"
-                                Margin="5">
-                                    <materialDesign:PackIcon 
-                                    Kind="Delete"
-                                    Height="24"
-                                    Width="24"/>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </GroupBox.HeaderTemplate>
-
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="auto"/>
-                        </Grid.RowDefinitions>
-
-                        <DataGrid x:Name="dataGridRecords"
-                         Grid.Row="0"
-                         VerticalAlignment="Stretch"
-                         Margin="5"
-                         materialDesign:DataGridAssist.CellPadding="13 8 8 8"
-                         materialDesign:DataGridAssist.ColumnHeaderPadding="8"
-                         ColumnWidth="*">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn
-                            Binding="{Binding IsSelected}"
-                            ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
-                            EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
-                            Width="auto">
-                                    <DataGridCheckBoxColumn.Header>
-                                        <!--padding to allow hit test to pass thru for sorting -->
-                                        <Border
-                                    Background="Transparent"
-                                    Padding="6 0 6 0"
-                                    HorizontalAlignment="Center">
-                                            <CheckBox
-                                        HorizontalAlignment="Center" />
-                                        </Border>
-                                    </DataGridCheckBoxColumn.Header>
-                                </DataGridCheckBoxColumn>
-                                <DataGridTextColumn Header="Date"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
-                                <DataGridTextColumn Header="Name"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
-                                <DataGridTextColumn Header="Description"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
-                                <DataGridTextColumn Header="Amount"
-                                            EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}" />
+                                                    Width="0.25*"
+                                                    FontWeight="Bold"
+                                                    HeaderStyle="{StaticResource HeaderCenterAlign}"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding Amount, Converter={StaticResource AmountSymbolConverter}}"
+                                                    IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Foreground"
+                                                    Value="{Binding Amount, Converter={StaticResource AmountToColorConverter}}" />
+                                            <Setter Property="HorizontalAlignment"
+                                                    Value="Right" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <materialDesign:Card x:Name="cardTotal"
-                                     Grid.Row="1"
-                                     Background="{DynamicResource MaterialDesignBackground}"
-                                     Margin="5">
+
+                        <materialDesign:Card Grid.Row="1"
+                                             Background="{DynamicResource MaterialDesignBackground}"
+                                             Margin="5">
                             <Grid Margin="5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition />
@@ -290,27 +279,197 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0"
-                                    Orientation="Horizontal">
-                                    <TextBlock Text="Total Balance:"
-                                       Margin="0 0 3 0"/>
-                                    <TextBlock x:Name="txtTotalBalance"
-                                       Margin="3 0 0 0"/>
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Received:"
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding CustomerReceived, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="Green"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1"
-                                    Orientation="Horizontal">
-                                    <TextBlock Text="Total Received:"
-                                       Margin="0 0 3 0"/>
-                                    <TextBlock x:Name="txtTotalReceived"
-                                       Margin="3 0 0 0"/>
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Paid:"
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding CustomerPaid, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="Red"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2"
-                                    Orientation="Horizontal">
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Balance:"
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding CustomerBalance, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="{Binding CustomerBalance, Converter={StaticResource AmountToColorConverter}}"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
+                                </StackPanel>
+                            </Grid>
+                        </materialDesign:Card>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Grid.Row="0"
+                          Grid.Column="1"
+                          Style="{DynamicResource MaterialDesignCardGroupBox}"
+                          Margin="5"
+                          Header="{Binding}">
+                    <GroupBox.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                                        ToolTip="New Entry"
+                                        Margin="5"
+                                        Command="{Binding CreateNewTransactionEntry}">
+                                    <materialDesign:PackIcon Kind="Plus"
+                                                             Height="24"
+                                                             Width="24" />
+                                </Button>
+                                <Button Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                                        ToolTip="Edit Entry"
+                                        Margin="5">
+                                    <materialDesign:PackIcon Kind="Pencil"
+                                                             Height="24"
+                                                             Width="24" />
+                                </Button>
+                                <Button Grid.Row="0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                                        ToolTip="Delete Entry"
+                                        Margin="5">
+                                    <materialDesign:PackIcon Kind="Delete"
+                                                             Height="24"
+                                                             Width="24" />
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GroupBox.HeaderTemplate>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
+
+                        <DataGrid x:Name="dataGridRecords"
+                                  Grid.Row="0"
+                                  VerticalAlignment="Stretch"
+                                  Margin="5"
+                                  materialDesign:DataGridAssist.CellPadding="13 8 8 8"
+                                  materialDesign:DataGridAssist.ColumnHeaderPadding="8"
+                                  ColumnWidth="*"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  ItemsSource="{Binding Source={StaticResource TransactionsListSortByDate}}">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Binding="{Binding IsSelected}"
+                                                        ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
+                                                        EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
+                                                        Width="auto">
+                                    <DataGridCheckBoxColumn.Header>
+                                        <!--padding to allow hit test to pass thru for sorting -->
+                                        <Border Background="Transparent"
+                                                Padding="6 0 6 0"
+                                                HorizontalAlignment="Center">
+                                            <CheckBox HorizontalAlignment="Center" />
+                                        </Border>
+                                    </DataGridCheckBoxColumn.Header>
+                                </DataGridCheckBoxColumn>
+                                <DataGridTextColumn Header="Date"
+                                                    Width="1*"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding CreateDate,StringFormat=dd/MM/yy}"
+                                                    IsReadOnly="True"
+                                                    SortDirection="Ascending" />
+                                <DataGridTextColumn Header="Name"
+                                                    Width="2.25*"
+                                                    IsReadOnly="True"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding CustomerName}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="TextWrapping"
+                                                    Value="Wrap" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Description"
+                                                    Width="3.25*"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding Description}"
+                                                    IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="TextWrapping"
+                                                    Value="Wrap" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Amount"
+                                                    Width="1*"
+                                                    FontWeight="Bold"
+                                                    IsReadOnly="True"
+                                                    HeaderStyle="{StaticResource HeaderCenterAlign}"
+                                                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
+                                                    Binding="{Binding Amount, Converter={StaticResource AmountSymbolConverter}}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Foreground"
+                                                    Value="{Binding Amount, Converter={StaticResource AmountToColorConverter}}" />
+                                            <Setter Property="HorizontalAlignment"
+                                                    Value="Right" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <materialDesign:Card x:Name="cardTotal"
+                                             Grid.Row="1"
+                                             Background="{DynamicResource MaterialDesignBackground}"
+                                             Margin="5">
+                            <Grid Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Total Received:"
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding TransactionReceived, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="Green"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal">
                                     <TextBlock Text="Total Paid:"
-                                       Margin="0 0 3 0"/>
-                                    <TextBlock x:Name="txtTotalPaid"
-                                       Margin="3 0 0 0"/>
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding TransactionPaid, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="Red"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2"
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Total Balance:"
+                                               Margin="0 0 3 0" />
+                                    <TextBlock Text="{Binding TransactionBalance, Converter = {StaticResource AmountSymbolConverter}}"
+                                               Foreground="{Binding TransactionBalance, Converter={StaticResource AmountToColorConverter}}"
+                                               FontWeight="Bold"
+                                               Margin="3 0 0 0" />
                                 </StackPanel>
                             </Grid>
                         </materialDesign:Card>

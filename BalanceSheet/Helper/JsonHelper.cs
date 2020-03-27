@@ -13,7 +13,7 @@ namespace BalanceSheet.Helper
     {
         public static List<T> LoadJsonFromFile<T>(string fileName)
         {
-            using (StreamReader r = new StreamReader(fileName))
+            using (StreamReader r = File.OpenText(Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, fileName)))
             {
                 string json = r.ReadToEnd();
                 List<T> items = JsonConvert.DeserializeObject<List<T>>(json);
@@ -24,7 +24,7 @@ namespace BalanceSheet.Helper
 
         public static void WriteToJson<T>(List<T> jsonList, string fileName)
         {
-            using (StreamWriter file = File.CreateText(fileName))
+            using (StreamWriter file = File.CreateText(Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, fileName)))
             {
                 JsonSerializer serializer = new JsonSerializer();
                 //serialize object directly into file stream
