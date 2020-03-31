@@ -23,8 +23,8 @@
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"/>
             </Button>
-           
-            <TextBlock Style="{StaticResource MaterialDesignSubheadingTextBlock}"
+
+            <TextBlock Style="{StaticResource MaterialDesignBody2TextBlock}"
                        VerticalAlignment="Center"
                        TextWrapping="Wrap"
                        Text="{Binding AlertContent}"
@@ -38,7 +38,8 @@
             Width="150"
             HorizontalAlignment="Center"
             Margin="0 0 0 10"
-            Focusable="False">
+            Focusable="False"
+            IsDefault="True">
             <Button.CommandParameter>
                 <system:Boolean>True</system:Boolean>
             </Button.CommandParameter>

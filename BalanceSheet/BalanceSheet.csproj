@@ -94,6 +94,9 @@
     </ApplicationDefinition>
     <Compile Include="Converter\AmountSymbolConverter.cs" />
     <Compile Include="Converter\AmountToColorConverter.cs" />
+    <Compile Include="Dialogs\YesNoDialog.xaml.cs">
+      <DependentUpon>YesNoDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\AlertDialog.xaml.cs">
       <DependentUpon>AlertDialog.xaml</DependentUpon>
     </Compile>
@@ -104,6 +107,7 @@
       <DependentUpon>CreateNewCustomer.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helper\AppConstants.cs" />
+    <Compile Include="Helper\DialogHelper.cs" />
     <Compile Include="Helper\GeneralHelperClass.cs" />
     <Compile Include="Helper\JsonHelper.cs" />
     <Compile Include="Helper\PrintHelper.cs" />
@@ -111,10 +115,15 @@
     <Compile Include="Helper\ValidationRules.cs" />
     <Compile Include="Model\Customer.cs" />
     <Compile Include="Model\Transaction.cs" />
+    <Compile Include="ViewModel\YesNoDialogViewModel.cs" />
     <Compile Include="ViewModel\AlertDialogViewModel.cs" />
     <Compile Include="ViewModel\CreateNewCustomerViewModel.cs" />
     <Compile Include="ViewModel\CreateNewTransactionViewModel.cs" />
     <Compile Include="ViewModel\MainWindowViewModel.cs" />
+    <Page Include="Dialogs\YesNoDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Dialogs\AlertDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -9,32 +9,44 @@ namespace BalanceSheet.Helper
 {
     public class PrintHelper
     {
+        bool isCustomerPrint;
         WebBrowser webBrowser = new WebBrowser();
         List<Transaction> transactionsList = new List<Transaction>();
+        private List<Transaction> list;
+        private bool v;
 
-        public void PrintDoc(List<Transaction> list)
+        public PrintHelper(List<Transaction> transactionsList, bool isCustomerPrint)
+        {
+            this.transactionsList = transactionsList;
+            this.isCustomerPrint = isCustomerPrint;
+        }
+
+        public void PrintDoc()
         {
             string htmlContent = "";
-            transactionsList = list;
-            ////htmlContent += "<table class=\"minimalistBlack\"><tbody><tr><th>Date</th><th>Customer Name</th><th>Description</th><th>Amount</th></tr>";
-            //htmlContent += "<table class=\"minimalistBlack\"> <thead> <tr> <th>Date</th> <th>Customer Name</th> <th>Description</th> <th>Amount</th> </tr> </thead> <tfoot> <tr> <td>foot1</td> <td>foot2</td> <td>foot3</td> <td>foot4</td> </tr> </tfoot> <tbody>";
-            //foreach (var item in list)
-            //{
-            //    htmlContent += "<tr>";
-            //    htmlContent += "<td>" + ((DateTime)item.CreateDate).ToShortDateString() + "</td>";
-            //    htmlContent += "<td>" + item.CustomerName + "</td>";
-            //    htmlContent += "<td>" + item.Description + "</td>";
-            //    htmlContent += "<td>" + item.Amount.ToString() + "</td>";
-            //    htmlContent += "</tr>";
-            //}
-            //htmlContent += "</tbody></table></html>";
             
             webBrowser.DocumentText = htmlContent;
+            webBrowser.Navigating += WebBrowser_Navigating;
             webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
+        }
+
+        private void WebBrowser_Navigating(object sender, WebBrowserNavigatingEventArgs e)
+        {
+            webBrowser.Width = 0;
+            webBrowser.Height = 0;
         }
 
         private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
+            #region CUSTOMER NAME START
+            if (isCustomerPrint)
+            {
+                HtmlElement customerNameElement = webBrowser.Document.CreateElement("h4");
+                customerNameElement.InnerHtml = "Customer: " + transactionsList[0].CustomerName;
+                webBrowser.Document.Body.AppendChild(customerNameElement);
+            } 
+            #endregion CUSTOMER NAME END
+
             HtmlElement tableElement = webBrowser.Document.CreateElement("table");
             tableElement.SetAttribute("class", "minimalistBlack");
             webBrowser.Document.Body.AppendChild(tableElement);
@@ -47,9 +59,12 @@ namespace BalanceSheet.Helper
             HtmlElement theadheaderElement1 = webBrowser.Document.CreateElement("th");
             theadheaderElement1.InnerHtml = "Date";
             theadrowElement.AppendChild(theadheaderElement1);
-            HtmlElement theadheaderElement2 = webBrowser.Document.CreateElement("th");
-            theadheaderElement2.InnerHtml = "Customer Name";
-            theadrowElement.AppendChild(theadheaderElement2);
+            if (!isCustomerPrint)
+            {
+                HtmlElement theadheaderElement2 = webBrowser.Document.CreateElement("th");
+                theadheaderElement2.InnerHtml = "Customer Name";
+                theadrowElement.AppendChild(theadheaderElement2); 
+            }
             HtmlElement theadheaderElement3 = webBrowser.Document.CreateElement("th");
             theadheaderElement3.InnerHtml = "Description";
             theadrowElement.AppendChild(theadheaderElement3);
@@ -61,6 +76,37 @@ namespace BalanceSheet.Helper
             tableElement.AppendChild(theadElement);
             #endregion
 
+            double totalBalance = 0;
+            #region TBODY ELEMENT START
+            HtmlElement tbodyElement = webBrowser.Document.CreateElement("tbody");
+            foreach (var item in transactionsList)
+            {
+                HtmlElement tbodyrowElement = webBrowser.Document.CreateElement("tr");
+
+                HtmlElement tbodydataElement1 = webBrowser.Document.CreateElement("td");
+                tbodydataElement1.InnerHtml = ((DateTime)item.TransactionDate).ToShortDateString();
+                tbodyrowElement.AppendChild(tbodydataElement1);
+                if (!isCustomerPrint)
+                {
+                    HtmlElement tbodydataElement2 = webBrowser.Document.CreateElement("td");
+                    tbodydataElement2.InnerHtml = item.CustomerName;
+                    tbodyrowElement.AppendChild(tbodydataElement2); 
+                }
+                HtmlElement tbodydataElement3 = webBrowser.Document.CreateElement("td");
+                tbodydataElement3.InnerHtml = item.Description;
+                tbodyrowElement.AppendChild(tbodydataElement3);
+                HtmlElement tbodydataElement4 = webBrowser.Document.CreateElement("td");
+                tbodydataElement4.SetAttribute("align", "right");
+                tbodydataElement4.InnerHtml = String.Format("{0:0.00}", item.Amount);
+                totalBalance += item.Amount;
+                tbodyrowElement.AppendChild(tbodydataElement4);
+
+                tbodyElement.AppendChild(tbodyrowElement);
+            }
+            tableElement.AppendChild(tbodyElement);
+            #endregion TBODY ELEMENT END
+
+
             #region TFOOT ELEMENT START
             HtmlElement tfootElement = webBrowser.Document.CreateElement("tfoot");
 
@@ -69,14 +115,18 @@ namespace BalanceSheet.Helper
             HtmlElement tfootdataElement1 = webBrowser.Document.CreateElement("th");
             tfootdataElement1.InnerHtml = "Total";
             tfootrowElement.AppendChild(tfootdataElement1);
-            HtmlElement tfootdataElement2 = webBrowser.Document.CreateElement("th");
-            tfootdataElement2.InnerHtml = "foot2";
-            tfootrowElement.AppendChild(tfootdataElement2);
+            if (!isCustomerPrint)
+            {
+                HtmlElement tfootdataElement2 = webBrowser.Document.CreateElement("th");
+                tfootdataElement2.InnerHtml = "";
+                tfootrowElement.AppendChild(tfootdataElement2); 
+            }
             HtmlElement tfootdataElement3 = webBrowser.Document.CreateElement("th");
-            tfootdataElement3.InnerHtml = "foot3";
+            tfootdataElement3.InnerHtml = "";
             tfootrowElement.AppendChild(tfootdataElement3);
             HtmlElement tfootdataElement4 = webBrowser.Document.CreateElement("th");
-            tfootdataElement4.InnerHtml = "foot4";
+            tfootdataElement4.SetAttribute("align", "right");
+            tfootdataElement4.InnerHtml = String.Format("{0:0.00}", totalBalance);
             tfootrowElement.AppendChild(tfootdataElement4);
 
             tfootElement.AppendChild(tfootrowElement);
@@ -84,33 +134,9 @@ namespace BalanceSheet.Helper
             tableElement.AppendChild(tfootElement);
             #endregion TFOOT ELEMENT END
 
-            HtmlElement tbodyElement = webBrowser.Document.CreateElement("tbody");
-            foreach (var item in transactionsList)
-            {
-                HtmlElement tbodyrowElement = webBrowser.Document.CreateElement("tr");
-
-                HtmlElement tbodydataElement1 = webBrowser.Document.CreateElement("td");
-                tbodydataElement1.InnerHtml = ((DateTime)item.CreateDate).ToShortDateString();
-                tbodyrowElement.AppendChild(tbodydataElement1);
-                HtmlElement tbodydataElement2 = webBrowser.Document.CreateElement("td");
-                tbodydataElement2.InnerHtml = item.CustomerName;
-                tbodyrowElement.AppendChild(tbodydataElement2);
-                HtmlElement tbodydataElement3 = webBrowser.Document.CreateElement("td");
-                tbodydataElement3.InnerHtml = item.Description;
-                tbodyrowElement.AppendChild(tbodydataElement3);
-                HtmlElement tbodydataElement4 = webBrowser.Document.CreateElement("td");
-                tbodydataElement4.SetAttribute("align", "right");
-                tbodydataElement4.InnerHtml = String.Format("{0:0.00}", item.Amount);
-                tbodyrowElement.AppendChild(tbodydataElement4);
-
-                tbodyElement.AppendChild(tbodyrowElement);
-            }
-            tableElement.AppendChild(tbodyElement);
-
             AddStyles();
-
-            webBrowser.Document.Body.Style = "font-size:13px;font-family:Microsoft San Serif;";
-            webBrowser.Print();
+            
+            webBrowser.ShowPrintDialog();
         }
 
         private void AddStyles()

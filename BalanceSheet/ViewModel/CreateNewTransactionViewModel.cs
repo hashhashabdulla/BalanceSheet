@@ -15,6 +15,7 @@ namespace BalanceSheet.ViewModel
     public class CreateNewTransactionViewModel : INotifyPropertyChanged
     {
         private string _description;
+        private string _transactionDate;
         private string _amount;
         private Customer _selectedCustomer;
         private bool _customerNameEnabled;
@@ -28,6 +29,19 @@ namespace BalanceSheet.ViewModel
                 {
                     _description = value;
                     OnPropertyChanged("Description");
+                }
+            }
+        }
+
+        public string TransactionDate
+        {
+            get { return _transactionDate; }
+            set
+            {
+                if (value != _transactionDate)
+                {
+                    _transactionDate = value;
+                    OnPropertyChanged("TransactionDate");
                 }
             }
         }
@@ -86,6 +100,7 @@ namespace BalanceSheet.ViewModel
 
         public CreateNewTransactionViewModel(List<Customer> customers)
         {
+            //Create new entry with customer selection enabled
             OKClick = new RelayCommand<object>(p => OnOkClick());
             CustomerList = new ObservableCollection<Customer>(customers);
             SelectedCustomer = CustomerList[0];
@@ -94,10 +109,22 @@ namespace BalanceSheet.ViewModel
 
         public CreateNewTransactionViewModel(List<Customer> customers, Customer selectedCustomer)
         {
+            //Create new entry with customer selection disabled
             OKClick = new RelayCommand<object>(p => OnOkClick());
             CustomerList = new ObservableCollection<Customer>(customers);
             SelectedCustomer = selectedCustomer;
             CustomerNameEnabled = false;
+        }
+
+        public CreateNewTransactionViewModel(List<Customer> customers, Transaction selectedTransactionItem, bool customerSelectionEnabled)
+        {
+            //Edit transaction entry
+            OKClick = new RelayCommand<object>(p => OnOkClick());
+            CustomerList = new ObservableCollection<Customer>(customers);
+            SelectedCustomer = customers.FirstOrDefault(o => o.CustomerName == selectedTransactionItem.CustomerName);
+            Description = selectedTransactionItem.Description;
+            Amount = selectedTransactionItem.Amount.ToString();
+            CustomerNameEnabled = customerSelectionEnabled;
         }
 
         private void OnOkClick()

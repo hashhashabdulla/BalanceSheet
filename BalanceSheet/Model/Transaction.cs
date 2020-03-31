@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,14 +10,29 @@ namespace BalanceSheet.Model
 {
     public class Transaction : INotifyPropertyChanged
     {
+        private string _transactionId;
         private string _customerName;
         private string _description;
         private double _received;
         private double _paid;
         private double _amount;
+        private DateTime? _transactionDate;
         private DateTime? _createDate;
         private DateTime? _modDate;
+        private bool _isSelected;
 
+        public string TransactionId
+        {
+            get { return _transactionId; }
+            set
+            {
+                if (value != _transactionId)
+                {
+                    _transactionId = value;
+                    OnPropertyChanged("TransactionId");
+                }
+            }
+        }
         public string CustomerName
         {
             get { return _customerName; }
@@ -77,6 +93,18 @@ namespace BalanceSheet.Model
                 }
             }
         }
+        public DateTime? TransactionDate
+        {
+            get { return _transactionDate; }
+            set
+            {
+                if (value != _transactionDate)
+                {
+                    _transactionDate = value;
+                    OnPropertyChanged("TransactionDate");
+                }
+            }
+        }
         public DateTime? CreateDate
         {
             get { return _createDate; }
@@ -98,6 +126,19 @@ namespace BalanceSheet.Model
                 {
                     _modDate = value;
                     OnPropertyChanged("ModDate");
+                }
+            }
+        }
+        [JsonIgnore]
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set
+            {
+                if (value != _isSelected)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged("IsSelected");
                 }
             }
         }

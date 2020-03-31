@@ -18,6 +18,8 @@ namespace BalanceSheet.ViewModel
     class MainWindowViewModel : INotifyPropertyChanged
     {
         private Customer _selectedCustomer;
+        private Transaction _selectedTransactionItem;
+        private Transaction _selectedCustomerTransactionItem;
         private string _customerFirtLetter;
         private double _customerReceived;
         private double _customerPaid;
@@ -25,13 +27,35 @@ namespace BalanceSheet.ViewModel
         private double _transactionReceived;
         private double _transactionPaid;
         private double _transactionBalance;
+        private bool _isTransactionEditEnabled;
+        private bool _isTransactionDeleteEnabled;
+        private bool _isCustomerEditEnabled;
+        private bool _isCustomerTransactionDeleteEnabled;
+        private string _customerFromDate;
+        private string _customerToDate;
+        private string _transactionFromDate;
+        private string _transactionToDate;
+        private bool _customerTransactionSelectAll;
+        private bool _transactionSelectAll;
+        private List<Transaction> allTransactionsList = new List<Transaction>();
+        List<Transaction> selectedTransactionsList = new List<Transaction>();
+        List<Transaction> selectedCustomerTransactionsList = new List<Transaction>();
 
         public bool DarkThemeEnabled { get; set; }
         public ICommand ThemeToggleCommand { get; set; }
         public ICommand CreateNewCustomerCommand { get; set; }
+        public ICommand RemoveCustomerCommand { get; set; }
         public ICommand CreateNewCustomerEntry { get; set; }
         public ICommand CreateNewTransactionEntry { get; set; }
+        public ICommand PrinterSettingsBtn { get; set; }
+        public ICommand CustomerPrintClick { get; set; }
         public ICommand PrintClick { get; set; }
+        public ICommand TransactionEntryEditBtn { get; set; }
+        public ICommand TransactionEntryDeleteBtn { get; set; }
+        public ICommand CustomerEntryEditBtn { get; set; }
+        public ICommand CustomerTransactionEntryDeleteBtn { get; set; }
+        public ICommand CustomerClearFilterBtn { get; set; }
+        public ICommand TransactionClearFilterBtn { get; set; }
         public ObservableCollection<Customer> CustomerList { get; set; }
         public ObservableCollection<Transaction> TransactionsList { get; set; }
         public ObservableCollection<Transaction> CustomerTransactionsList { get; set; }
@@ -51,6 +75,31 @@ namespace BalanceSheet.ViewModel
                 }
             }
         }
+        public Transaction SelectedTransactionItem
+        {
+            get { return _selectedTransactionItem; }
+            set
+            {
+                if (value != _selectedTransactionItem)
+                {
+                    _selectedTransactionItem = value;
+                    OnPropertyChanged("SelectedTransactionItem");
+                }
+            }
+        }
+        public Transaction SelectedCustomerTransactionItem
+        {
+            get { return _selectedCustomerTransactionItem; }
+            set
+            {
+                if (value != _selectedCustomerTransactionItem)
+                {
+                    _selectedCustomerTransactionItem = value;
+                    OnPropertyChanged("SelectedCustomerTransactionItem");
+                }
+            }
+        }
+
         public string CustomerFirstLetter
         {
             get { return _customerFirtLetter; }
@@ -135,6 +184,133 @@ namespace BalanceSheet.ViewModel
                 }
             }
         }
+        public bool IsTransactionEditEnabled
+        {
+            get { return _isTransactionEditEnabled; }
+            set
+            {
+                if (value != _isTransactionEditEnabled)
+                {
+                    _isTransactionEditEnabled = value;
+                    OnPropertyChanged("IsTransactionEditEnabled");
+                }
+            }
+        }
+        public bool IsTransactionDeleteEnabled
+        {
+            get { return _isTransactionDeleteEnabled; }
+            set
+            {
+                if (value != _isTransactionDeleteEnabled)
+                {
+                    _isTransactionDeleteEnabled = value;
+                    OnPropertyChanged("IsTransactionDeleteEnabled");
+                }
+            }
+        }
+        public bool IsCustomerEditEnabled
+        {
+            get { return _isCustomerEditEnabled; }
+            set
+            {
+                if (value != _isCustomerEditEnabled)
+                {
+                    _isCustomerEditEnabled = value;
+                    OnPropertyChanged("IsCustomerEditEnabled");
+                }
+            }
+        }
+        public bool IsCustomerTransactionDeleteEnabled
+        {
+            get { return _isCustomerTransactionDeleteEnabled; }
+            set
+            {
+                if (value != _isCustomerTransactionDeleteEnabled)
+                {
+                    _isCustomerTransactionDeleteEnabled = value;
+                    OnPropertyChanged("IsCustomerTransactionDeleteEnabled");
+                }
+            }
+        }
+        public string CustomerFromDate
+        {
+            get { return _customerFromDate; }
+            set
+            {
+                if (value != _customerFromDate)
+                {
+                    _customerFromDate = value;
+                    OnPropertyChanged("CustomerFromDate");
+                }
+                OnCustomerFromDateChanged();
+            }
+        }
+        public string CustomerToDate
+        {
+            get { return _customerToDate; }
+            set
+            {
+                if (value != _customerToDate)
+                {
+                    _customerToDate = value;
+                    OnPropertyChanged("CustomerToDate");
+                }
+                OnCustomerToDateChanged();
+            }
+        }
+        public string TransactionFromDate
+        {
+            get { return _transactionFromDate; }
+            set
+            {
+                if (value != _transactionFromDate)
+                {
+                    _transactionFromDate = value;
+                    OnPropertyChanged("TransactionFromDate");
+                }
+                OnTransactionFromDateChanged();
+            }
+        }
+        public bool CustomerTransactionSelectAll
+        {
+            get { return _customerTransactionSelectAll; }
+            set
+            {
+                if (value != _customerTransactionSelectAll)
+                {
+                    _customerTransactionSelectAll = value;
+                    OnPropertyChanged("CustomerTransactionSelectAll");
+                }
+                OnCustomerTransactionSelectAllChanged();
+            }
+        }
+        public bool TransactionSelectAll
+        {
+            get { return _transactionSelectAll; }
+            set
+            {
+                if (value != _transactionSelectAll)
+                {
+                    _transactionSelectAll = value;
+                    OnPropertyChanged("TransactionSelectAll");
+                }
+                OnTransactionSelectAllChanged();
+            }
+        }
+
+        public string TransactionToDate
+        {
+            get { return _transactionToDate; }
+            set
+            {
+                if (value != _transactionToDate)
+                {
+                    _transactionToDate = value;
+                    OnPropertyChanged("TransactionToDate");
+                }
+                OnTransactionToDateChanged();
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -152,16 +328,31 @@ namespace BalanceSheet.ViewModel
 
         private void InitializeCommands()
         {
-            ThemeToggleCommand = new RelayCommand<object>(p => OnThemeToggle());
-            CreateNewCustomerCommand = new RelayCommand<object>(p => OnCreateNewCustomerClickedAsync());
-            CreateNewCustomerEntry = new RelayCommand<object>(p => OnCreateNewCustomerEntryAsync());
-            CreateNewTransactionEntry = new RelayCommand<object>(p => OnCreateNewTransactionEntryAsync());
-            PrintClick = new RelayCommand<object>(p => OnPrintClick());
+            try
+            {
+                ThemeToggleCommand = new RelayCommand<object>(p => OnThemeToggle());
+                CreateNewCustomerCommand = new RelayCommand<object>(p => OnCreateNewCustomerClickedAsync());
+                RemoveCustomerCommand = new RelayCommand<object>(p => OnRemoveCustomerClickedAsync());
+                CreateNewCustomerEntry = new RelayCommand<object>(p => OnCreateNewCustomerEntryAsync());
+                CreateNewTransactionEntry = new RelayCommand<object>(p => OnCreateNewTransactionEntryAsync());
+                PrinterSettingsBtn = new RelayCommand<object>(p => OnPrinterSettingsClick());
+                CustomerPrintClick = new RelayCommand<object>(p => OnCustomerPrintClick());
+                PrintClick = new RelayCommand<object>(p => OnPrintClick());
+                TransactionEntryEditBtn = new RelayCommand<object>(p => OnTransactionEntryEditClickAsync());
+                TransactionEntryDeleteBtn = new RelayCommand<object>(p => OnTransactionEntryDeleteClickAsync());
+                CustomerEntryEditBtn = new RelayCommand<object>(p => OnCustomerEntryEditClickAsync());
+                CustomerTransactionEntryDeleteBtn = new RelayCommand<object>(p => OnCustomerTransactionEntryDeleteClickAsync());
+                CustomerClearFilterBtn = new RelayCommand<object>(p => OnCustomerClearFilterAsync());
+                TransactionClearFilterBtn = new RelayCommand<object>(p => OnTransactionClearFilterAsync());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
         }
 
         private void Initialize()
         {
-            CustomerTransactionsList = new ObservableCollection<Transaction>();
             //Load Data
             LoadCustomerList();
             LoadTransactionList();
@@ -171,15 +362,53 @@ namespace BalanceSheet.ViewModel
 
         private void LoadCustomerList()
         {
-            CustomerList = new ObservableCollection<Customer>(JsonHelper.LoadJsonFromFile<Customer>(@"Data\CustomerData.json"));
+            try
+            {
+                CustomerList = new ObservableCollection<Customer>(JsonHelper.LoadJsonFromFile<Customer>(@"Data\CustomerData.json"));
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
         }
 
         private void LoadTransactionList()
         {
-            TransactionsList = new ObservableCollection<Transaction>(JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json").OrderByDescending(o => o.CreateDate));
-            TransactionsList.CollectionChanged += TransactionsList_CollectionChanged;
-            //Call the event manually first time
-            TransactionsList_CollectionChanged(null, null);
+            try
+            {
+                allTransactionsList = JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json").OrderByDescending(o => o.CreateDate).ToList();
+                TransactionsList = new ObservableCollection<Transaction>(allTransactionsList);
+                TransactionsList.CollectionChanged += TransactionsList_CollectionChanged;
+                //Call the event manually first time
+                TransactionsList_CollectionChanged(null, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private void OnCustomerTransactionSelectAllChanged()
+        {
+            if (CustomerTransactionsList != null)
+            {
+                foreach (Transaction item in CustomerTransactionsList)
+                {
+                    item.IsSelected = CustomerTransactionSelectAll;
+                } 
+            }
+        }
+
+        private void OnTransactionSelectAllChanged()
+        {
+            if (TransactionsList != null)
+            {
+                foreach (Transaction item in TransactionsList)
+                {
+                    item.IsSelected = TransactionSelectAll;
+                }
+            }
         }
 
         private void TransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -195,25 +424,114 @@ namespace BalanceSheet.ViewModel
                     TransactionReceived += item.Received;
                     TransactionPaid -= item.Paid;
                     TransactionBalance += item.Amount;
+                    item.PropertyChanged += SelectedTransactionItemOnPropertyChanged;
                 }
+            }
+        }
+
+        private void SelectedTransactionItemOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            selectedTransactionsList = TransactionsList.ToList().FindAll(o => o.IsSelected == true);
+            if (selectedTransactionsList != null)
+            {
+                if (selectedTransactionsList.Count == 0)
+                {
+                    //No rows selected. Disable edit and delete button
+                    IsTransactionDeleteEnabled = false;
+                    IsTransactionEditEnabled = false;
+
+                }
+                else if (selectedTransactionsList.Count == 1)
+                {
+                    //Single row selected. Enable edit button, enable delete button
+                    IsTransactionDeleteEnabled = true;
+                    IsTransactionEditEnabled = true;
+                }
+                else
+                {
+                    //Multiple rows selected. Disable edit button, enable delete button
+                    IsTransactionDeleteEnabled = true;
+                    IsTransactionEditEnabled = false;
+                }
+            }
+            else
+            {
+                IsTransactionDeleteEnabled = false;
+                IsTransactionEditEnabled = false;
             }
         }
 
         private void SelectedCustomerOnPropertyChanged()
         {
-            _customerFirtLetter = SelectedCustomer.CustomerName.Substring(0, 1);
-            List<Transaction> transactions = TransactionsList.ToList().FindAll(o => o.CustomerName == SelectedCustomer.CustomerName);
-            CustomerTransactionsList.Clear();
-            CustomerReceived = 0;
-            CustomerPaid = 0;
-            CustomerBalance = 0;
-            foreach (var item in transactions)
+            try
             {
-                CustomerTransactionsList.Add(item);
-                //Compute values
-                CustomerReceived += item.Received;
-                CustomerPaid -= item.Paid;
-                CustomerBalance += item.Amount;
+                _customerFirtLetter = SelectedCustomer.CustomerName.Substring(0, 1);
+                List<Transaction> transactions = allTransactionsList.FindAll(o => o.CustomerName == SelectedCustomer.CustomerName).OrderByDescending(o => o.CreateDate).ToList();
+
+                if(CustomerTransactionsList == null)
+                {
+                    CustomerTransactionsList = new ObservableCollection<Transaction>(transactions);
+                    CustomerTransactionsList.CollectionChanged += CustomerTransactionsList_CollectionChanged;
+                    //Call the event manually first time
+                    CustomerTransactionsList_CollectionChanged(null, null);
+                }
+                else
+                {
+                    OnCustomerFromDateChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private void CustomerTransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
+            {
+                //First clear all the values
+                CustomerReceived = 0;
+                CustomerPaid = 0;
+                CustomerBalance = 0;
+                foreach (var item in CustomerTransactionsList)
+                {
+                    CustomerReceived += item.Received;
+                    CustomerPaid -= item.Paid;
+                    CustomerBalance += item.Amount;
+                    item.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
+                }
+            }
+        }
+
+        private void SelectedCustomerTransactionItemOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            selectedCustomerTransactionsList = CustomerTransactionsList.ToList().FindAll(o => o.IsSelected == true);
+            if (selectedCustomerTransactionsList != null)
+            {
+                if (selectedCustomerTransactionsList.Count == 0)
+                {
+                    //No rows selected. Disable edit and delete button
+                    IsCustomerTransactionDeleteEnabled = false;
+                    IsCustomerEditEnabled = false;
+                }
+                else if (selectedCustomerTransactionsList.Count == 1)
+                {
+                    //Single row selected. Enable edit button, enable delete button
+                    IsCustomerTransactionDeleteEnabled = true;
+                    IsCustomerEditEnabled = true;
+                }
+                else
+                {
+                    //Multiple rows selected. Disable edit button, enable delete button
+                    IsCustomerTransactionDeleteEnabled = true;
+                    IsCustomerEditEnabled = false;
+                }
+            }
+            else
+            {
+                IsCustomerTransactionDeleteEnabled = false;
+                IsCustomerEditEnabled = false;
             }
         }
 
@@ -254,26 +572,21 @@ namespace BalanceSheet.ViewModel
                     //If existing customer is null, then go ahead with creation, else display alert
                     if (existingCustomer == null)
                     {
-                        Customer customer = GeneralHelperClass.GetCustomerObject(new Customer(), customerViewModel.CustomerName, double.Parse(customerViewModel.OpeningBalance));
-                        Transaction transaction = GeneralHelperClass.GetTransactionObject(new Transaction(), customerViewModel.CustomerName, "Opening Balance", double.Parse(customerViewModel.OpeningBalance));
-                        //Add newly created customer to the customers list and transactions list
-                        CustomerList.Add(customer);
-                        TransactionsList.Add(transaction);
-                        //Save Details to json file
-                        JsonHelper.WriteToJson(CustomerList.ToList(), @"Data\CustomerData.json");
-                        JsonHelper.WriteToJson(TransactionsList.ToList(), @"Data\TransactionData.json");
+                        string customerName = customerViewModel.CustomerName;
+                        string description = "Opening Balance";
+                        DateTime transactionDate = DateTime.Parse(customerViewModel.TransactionDate);
+                        double amount = double.Parse(customerViewModel.OpeningBalance);
+
+                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
 
                         //Make newly created customer as the selected customer
-                        SelectedCustomer = customer;
+                        SelectedCustomer = CustomerList[CustomerList.Count - 1];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
                     }
                     else
                     {
-                        var alertDialog = new AlertDialog()
-                        {
-                            DataContext = new AlertDialogViewModel("Customer already exists!")
-                        };
-
-                        await DialogHost.Show(alertDialog, "RootDialog");
+                        DialogHelper.ShowAlertDialogAsync("Customer already exists!");
                     }
                 }
             }
@@ -283,39 +596,144 @@ namespace BalanceSheet.ViewModel
             }
         }
 
-        private async void OnCreateNewCustomerEntryAsync()
+        private async void OnRemoveCustomerClickedAsync()
         {
-            var createNewCustomerEntryDialog = new CreateNewTransaction()
+            if(SelectedCustomer != null)
             {
-                DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomer)
-            };
-
-            try
-            {
-                //Show dialog
-                var result = await DialogHost.Show(createNewCustomerEntryDialog, "RootDialog");
-                //check the result...
-                if (result != null && (bool)result)
+                try
                 {
-                    CreateNewTransactionViewModel newTransactionViewModel = (CreateNewTransactionViewModel)createNewCustomerEntryDialog.DataContext;
-                    //Fetch the customer and transaction
-                    Customer existingCustomer = CustomerList.FirstOrDefault(o => o.CustomerName == newTransactionViewModel.SelectedCustomer.CustomerName);
-                    Customer customer = GeneralHelperClass.GetCustomerObject(existingCustomer, newTransactionViewModel.SelectedCustomer.CustomerName, double.Parse(newTransactionViewModel.Amount));
-                    Transaction transaction = GeneralHelperClass.GetTransactionObject(new Transaction(), newTransactionViewModel.SelectedCustomer.CustomerName, newTransactionViewModel.Description, double.Parse(newTransactionViewModel.Amount));
-                    //Update Customer list and transaction list
-                    int index = CustomerList.IndexOf(existingCustomer);
-                    CustomerList[index] = customer;
-                    TransactionsList.Add(transaction);
-                    //Update selected customer
-                    SelectedCustomer = CustomerList[index];
-                    //Save details to json file
-                    JsonHelper.WriteToJson(CustomerList.ToList(), @"Data\CustomerData.json");
-                    JsonHelper.WriteToJson(TransactionsList.ToList(), @"Data\TransactionData.json");
+                    //Show dialog
+                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    //check the result...
+                    if (result)
+                    {
+                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
+                        string customerName = SelectedCustomer.CustomerName;
+
+                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, null, customerName, true);
+
+                        //Select the first customer in the list after removing
+                        SelectedCustomer = CustomerList.Count > 0 ? CustomerList[0] : null;
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
                 }
             }
-            catch (Exception ex)
+        }
+
+        private async void OnCreateNewCustomerEntryAsync()
+        {
+            if (CustomerList != null && CustomerList.Count > 0)
             {
-                Console.WriteLine(ex.StackTrace);
+                var createNewCustomerEntryDialog = new CreateNewTransaction()
+                {
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomer)
+                };
+
+                try
+                {
+                    //Show dialog
+                    var result = await DialogHost.Show(createNewCustomerEntryDialog, "RootDialog");
+                    //check the result...
+                    if (result != null && (bool)result)
+                    {
+                        CreateNewTransactionViewModel newTransactionViewModel = (CreateNewTransactionViewModel)createNewCustomerEntryDialog.DataContext;
+
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
+
+                        string customerName = newTransactionViewModel.SelectedCustomer.CustomerName;
+                        string description = newTransactionViewModel.Description;
+                        DateTime transactionDate = DateTime.Parse(newTransactionViewModel.TransactionDate);
+                        double amount = double.Parse(newTransactionViewModel.Amount);
+
+                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                } 
+            }
+        }
+
+        private async void OnCustomerEntryEditClickAsync()
+        {
+            if (SelectedCustomerTransactionItem != null)
+            {
+                var editCustomerTransactionDialog = new CreateNewTransaction()
+                {
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomerTransactionItem, false)
+                };
+
+                try
+                {
+                    //Show dialog
+                    var result = await DialogHost.Show(editCustomerTransactionDialog, "RootDialog");
+                    //check the result...
+                    if (result != null && (bool)result)
+                    {
+                        CreateNewTransactionViewModel editTransactionViewModel = (CreateNewTransactionViewModel)editCustomerTransactionDialog.DataContext;
+
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
+
+                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
+                        string customerName = editTransactionViewModel.SelectedCustomer.CustomerName;
+                        string description = editTransactionViewModel.Description;
+                        DateTime transactionDate = DateTime.Parse(editTransactionViewModel.TransactionDate);
+                        double amount = double.Parse(editTransactionViewModel.Amount);
+
+                        allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+            }
+        }
+
+        private async void OnCustomerTransactionEntryDeleteClickAsync()
+        {
+            if (selectedCustomerTransactionsList != null && selectedCustomerTransactionsList.Count > 0)
+            {
+                try
+                {
+                    //Show dialog
+                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    //check the result...
+                    if ((bool)result)
+                    {
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
+
+                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
+                        string customerName = SelectedCustomer.CustomerName;
+
+                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedCustomerTransactionsList, customerName, false);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
             }
         }
 
@@ -336,17 +754,20 @@ namespace BalanceSheet.ViewModel
                     if (result != null && (bool)result)
                     {
                         CreateNewTransactionViewModel newTransactionViewModel = (CreateNewTransactionViewModel)createNewTransactionEntryDialog.DataContext;
-                        //Fetch the customer and transaction
-                        Customer existingCustomer = CustomerList.FirstOrDefault(o => o.CustomerName == newTransactionViewModel.SelectedCustomer.CustomerName);
-                        Customer customer = GeneralHelperClass.GetCustomerObject(existingCustomer, newTransactionViewModel.SelectedCustomer.CustomerName, double.Parse(newTransactionViewModel.Amount));
-                        Transaction transaction = GeneralHelperClass.GetTransactionObject(new Transaction(), newTransactionViewModel.SelectedCustomer.CustomerName, newTransactionViewModel.Description, double.Parse(newTransactionViewModel.Amount));
-                        //Update Customer list and transaction list
-                        int index = CustomerList.IndexOf(existingCustomer);
-                        CustomerList[index] = customer;
-                        TransactionsList.Add(transaction);
-                        //Save details to json file
-                        JsonHelper.WriteToJson(CustomerList.ToList(), @"Data\CustomerData.json");
-                        JsonHelper.WriteToJson(TransactionsList.ToList(), @"Data\TransactionData.json");
+
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
+
+                        string customerName = newTransactionViewModel.SelectedCustomer.CustomerName;
+                        string description = newTransactionViewModel.Description;
+                        DateTime transactionDate = DateTime.Parse(newTransactionViewModel.TransactionDate);
+                        double amount = double.Parse(newTransactionViewModel.Amount);
+
+                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
                     }
                 }
                 catch (Exception ex)
@@ -356,22 +777,170 @@ namespace BalanceSheet.ViewModel
             }
         }
 
-        private void OnPrintClick()
+        private async void OnTransactionEntryEditClickAsync()
         {
-            PrintHelper printHelper = new PrintHelper();
-            printHelper.PrintDoc(TransactionsList.ToList());
+            if(SelectedTransactionItem != null)
+            {
+                var editTransactionDialog = new CreateNewTransaction()
+                {
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedTransactionItem, true)
+                };
+
+                try
+                {
+                    //Show dialog
+                    var result = await DialogHost.Show(editTransactionDialog, "RootDialog");
+                    //check the result...
+                    if (result != null && (bool)result)
+                    {
+                        CreateNewTransactionViewModel editTransactionViewModel = (CreateNewTransactionViewModel)editTransactionDialog.DataContext;
+                        
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
+
+                        string transactionId = SelectedTransactionItem.TransactionId;
+                        string customerName = editTransactionViewModel.SelectedCustomer.CustomerName;
+                        string description = editTransactionViewModel.Description;
+                        DateTime transactionDate = DateTime.Parse(editTransactionViewModel.TransactionDate);
+                        double amount = double.Parse(editTransactionViewModel.Amount);
+
+                        allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+            }
         }
 
-        //Method to display alert messages
-        private async void ShowAlertDialogAsync(string message)
+        private async void OnTransactionEntryDeleteClickAsync()
         {
-            var alertDialog = new AlertDialog()
+            if(selectedTransactionsList != null && selectedTransactionsList.Count > 0)
             {
-                DataContext = new AlertDialogViewModel(message)
-            };
+                try
+                {
+                    //Show dialog
+                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    //check the result...
+                    if ((bool)result)
+                    {
+                        int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
 
-            //show alert dialog
-            await DialogHost.Show(alertDialog, "RootDialog");
+                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
+                        string customerName = SelectedCustomer.CustomerName;
+
+                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedTransactionsList, customerName, false);
+
+                        //Reselect the customer because it will get unselected while modifying the CustomerList
+                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        //Refresh the transactions list
+                        OnTransactionFromDateChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+            }
+        }
+
+        private void OnCustomerFromDateChanged()
+        {
+            if (SelectedCustomer != null)
+            {
+                if (CustomerFromDate != null && CustomerFromDate != "")
+                {
+                    CustomerToDate = CustomerFromDate;
+
+                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+                }
+                else
+                {
+                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, null, null);
+                } 
+            }
+        }
+
+        private void OnCustomerToDateChanged()
+        {
+            if (SelectedCustomer != null)
+            {
+                if (CustomerToDate != null && CustomerToDate != "" && CustomerFromDate != null && CustomerFromDate != "")
+                {
+                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+                }
+                else
+                {
+                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, null, null);
+                } 
+            }
+        }
+
+        private void OnCustomerClearFilterAsync()
+        {
+            CustomerFromDate = "";
+            CustomerToDate = "";
+        }
+
+        private void OnTransactionFromDateChanged()
+        {
+            if (TransactionFromDate != null && TransactionFromDate != "")
+            {
+                TransactionToDate = TransactionFromDate;
+
+                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate));
+            }
+            else
+            {
+                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, null, null);
+            }
+        }
+
+        private void OnTransactionToDateChanged()
+        {
+            if (TransactionToDate != null && TransactionToDate != "" && TransactionFromDate != null && TransactionFromDate != "")
+            {
+                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate));
+            }
+            else
+            {
+                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, null, null);
+            }
+        }
+        
+        private void OnTransactionClearFilterAsync()
+        {
+            TransactionFromDate = "";
+            TransactionToDate = "";
+        }
+
+        private void OnPrintClick()
+        {
+            PrintHelper printHelper = new PrintHelper(TransactionsList.ToList().OrderByDescending(o => o.TransactionDate).ToList(), false);
+            printHelper.PrintDoc();
+        }
+
+        private void OnCustomerPrintClick()
+        {
+            PrintHelper printHelper = new PrintHelper(CustomerTransactionsList.ToList().OrderByDescending(o => o.TransactionDate).ToList(), true);
+            printHelper.PrintDoc();
+        }
+
+        private void OnPrinterSettingsClick()
+        {
+            System.Windows.Forms.WebBrowser webBrowser = new System.Windows.Forms.WebBrowser();
+            webBrowser.DocumentText = "";
+            webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
+        }
+
+        private void WebBrowser_DocumentCompleted(object sender, System.Windows.Forms.WebBrowserDocumentCompletedEventArgs e)
+        {
+            ((System.Windows.Forms.WebBrowser)sender).ShowPageSetupDialog();
         }
     }
 }

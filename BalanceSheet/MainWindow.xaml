@@ -28,14 +28,14 @@
         <CollectionViewSource Source="{Binding CustomerTransactionsList}"
                               x:Key="CustomerTransactionsListSortByDate">
             <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="CreateDate"
+                <scm:SortDescription PropertyName="TransactionDate"
                                      Direction="Descending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
         <CollectionViewSource Source="{Binding TransactionsList}"
                               x:Key="TransactionsListSortByDate">
             <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="CreateDate"
+                <scm:SortDescription PropertyName="TransactionDate"
                                      Direction="Descending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
@@ -115,18 +115,19 @@
                             HorizontalAlignment="Left"
                             Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                             ToolTip="Delete Customer"
-                            Margin="5">
+                            Margin="5"
+                            Command="{Binding RemoveCustomerCommand}">
                         <materialDesign:PackIcon Kind="UserMinusOutline"
                                                  Height="24"
                                                  Width="24" />
                     </Button>
-
-                    <Button HorizontalAlignment="Left"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
-                            ToolTip="Delete Customer"
+                    <Button Grid.Row="0"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            ToolTip="Print Settings"
                             Margin="5"
-                            Command="{Binding PrintClick}">
-                        <materialDesign:PackIcon Kind="Printer"
+                            Command="{Binding PrinterSettingsBtn}">
+                        <materialDesign:PackIcon Kind="PrinterSettings"
                                                  Height="24"
                                                  Width="24" />
                     </Button>
@@ -158,45 +159,95 @@
                           Header="{Binding}">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="btnAddNewEntry"
-                                        Grid.Row="0"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        ToolTip="New Entry"
-                                        Margin="5"
-                                        Command="{Binding CreateNewCustomerEntry}">
-                                    <materialDesign:PackIcon Kind="Plus"
-                                                             Height="24"
-                                                             Width="24" />
-                                </Button>
-                                <Button x:Name="btnEditEntry"
-                                        Grid.Row="0"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        ToolTip="New Entry"
-                                        Margin="5">
-                                    <materialDesign:PackIcon Kind="Pencil"
-                                                             Height="24"
-                                                             Width="24" />
-                                </Button>
-                                <Button x:Name="btnDeleteEntry"
-                                        Grid.Row="0"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        ToolTip="New Entry"
-                                        Margin="5">
-                                    <materialDesign:PackIcon Kind="Delete"
-                                                             Height="24"
-                                                             Width="24" />
-                                </Button>
-                                <materialDesign:Chip Margin="15 0 5 0"
-                                                     VerticalAlignment="Stretch"
-                                                     FontSize="18"
-                                                     Background="{DynamicResource MaterialDesignChipBackground}"
-                                                     Foreground="{DynamicResource MaterialDesignBody}"
-                                                     Content="{Binding SelectedCustomer.CustomerName}"
-                                                     Icon="{Binding CustomerFirstLetter}" />
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="btnAddNewEntry"
+                                            Grid.Row="0"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            ToolTip="New Entry"
+                                            Margin="5"
+                                            Command="{Binding CreateNewCustomerEntry}">
+                                        <materialDesign:PackIcon Kind="Plus"
+                                                                 Height="24"
+                                                                 Width="24" />
+                                    </Button>
+                                    <Button x:Name="btnEditEntry"
+                                            Grid.Row="0"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            ToolTip="Edit Entry"
+                                            Margin="5"
+                                            IsEnabled="{Binding IsCustomerEditEnabled}"
+                                            Command="{Binding CustomerEntryEditBtn}">
+                                        <materialDesign:PackIcon Kind="Pencil"
+                                                                 Height="24"
+                                                                 Width="24" />
+                                    </Button>
+                                    <Button x:Name="btnDeleteEntry"
+                                            Grid.Row="0"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            ToolTip="Delete Entry"
+                                            Margin="5"
+                                            IsEnabled="{Binding IsCustomerTransactionDeleteEnabled}"
+                                            Command="{Binding CustomerTransactionEntryDeleteBtn}">
+                                        <materialDesign:PackIcon Kind="Delete"
+                                                                 Height="24"
+                                                                 Width="24" />
+                                    </Button>
+                                    <Button HorizontalAlignment="Left"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            ToolTip="Print"
+                                            Margin="5"
+                                            Command="{Binding CustomerPrintClick}">
+                                        <materialDesign:PackIcon Kind="Printer"
+                                                                 Height="24"
+                                                                 Width="24" />
+                                    </Button>
+                                    <materialDesign:Chip Margin="15 0 5 0"
+                                                         VerticalAlignment="Stretch"
+                                                         FontSize="18"
+                                                         Background="{DynamicResource MaterialDesignChipBackground}"
+                                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                                         Content="{Binding SelectedCustomer.CustomerName}"
+                                                         Icon="{Binding CustomerFirstLetter}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <DatePicker Width="100"
+                                                materialDesign:HintAssist.Hint="From Date"
+                                                Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
+                                                Margin="5 5 0 0"
+                                                Text="{Binding CustomerFromDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                Focusable="False"/>
+                                    
+                                    <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                               VerticalAlignment="Bottom"
+                                               Margin="10 5 0 0">
+                                               to
+                                    </TextBlock>
+                                    
+                                    <DatePicker Width="100"
+                                                materialDesign:HintAssist.Hint="To Date"
+                                                Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
+                                                Margin="10 5 0 0"
+                                                Text="{Binding CustomerToDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                Focusable="False" />
+
+                                    <Button HorizontalAlignment="Left"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            ToolTip="Clear Filter"
+                                            Margin="10 5 0 0"
+                                            Width="28"
+                                            Height="28"
+                                            VerticalAlignment="Bottom"
+                                            Command="{Binding CustomerClearFilterBtn}">
+                                        <materialDesign:PackIcon Kind="FilterRemove"
+                                                                 Height="16"
+                                                                 Width="16" />
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
                         </DataTemplate>
                     </GroupBox.HeaderTemplate>
@@ -213,11 +264,19 @@
                                   materialDesign:DataGridAssist.CellPadding="13 8 8 8"
                                   materialDesign:DataGridAssist.ColumnHeaderPadding="8"
                                   ColumnWidth="*"
+                                  SelectedItem="{Binding SelectedCustomerTransactionItem}"
                                   ItemsSource="{Binding Source={StaticResource CustomerTransactionsListSortByDate}}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridRow"
+                                       BasedOn="{StaticResource MaterialDesignDataGridRow}">
+                                    <Setter Property="IsSelected"
+                                            Value="{Binding Path=IsSelected, Mode=TwoWay}" />
+                                </Style>
+                            </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Binding="{Binding IsSelected}"
+                                <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                         ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
                                                         EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
                                                         Width="auto">
@@ -226,14 +285,15 @@
                                         <Border Background="Transparent"
                                                 Padding="6 0 6 0"
                                                 HorizontalAlignment="Center">
-                                            <CheckBox HorizontalAlignment="Center" />
+                                            <CheckBox HorizontalAlignment="Center"
+                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.CustomerTransactionSelectAll}"/>
                                         </Border>
                                     </DataGridCheckBoxColumn.Header>
                                 </DataGridCheckBoxColumn>
                                 <DataGridTextColumn Header="Date"
                                                     Width="0.20*"
                                                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
-                                                    Binding="{Binding CreateDate,StringFormat=dd/MM/yy}"
+                                                    Binding="{Binding TransactionDate,StringFormat=dd/MM/yy}"
                                                     IsReadOnly="True"
                                                     SortDirection="Descending" />
                                 <DataGridTextColumn Header="Description"
@@ -334,7 +394,9 @@
                                         HorizontalAlignment="Left"
                                         Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
                                         ToolTip="Edit Entry"
-                                        Margin="5">
+                                        Margin="5"
+                                        IsEnabled="{Binding IsTransactionEditEnabled}"
+                                        Command="{Binding TransactionEntryEditBtn}">
                                     <materialDesign:PackIcon Kind="Pencil"
                                                              Height="24"
                                                              Width="24" />
@@ -343,10 +405,55 @@
                                         HorizontalAlignment="Left"
                                         Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
                                         ToolTip="Delete Entry"
-                                        Margin="5">
+                                        Margin="5"
+                                        IsEnabled="{Binding IsTransactionDeleteEnabled}"
+                                        Command="{Binding TransactionEntryDeleteBtn}">
                                     <materialDesign:PackIcon Kind="Delete"
                                                              Height="24"
                                                              Width="24" />
+                                </Button>
+
+                                <Button HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                                        ToolTip="Print"
+                                        Margin="5"
+                                        Command="{Binding PrintClick}">
+                                    <materialDesign:PackIcon Kind="Printer"
+                                                             Height="24"
+                                                             Width="24" />
+                                </Button>
+
+                                <DatePicker Width="100"
+                                            materialDesign:HintAssist.Hint="From Date"
+                                            Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
+                                            Margin="25 5 0 5"
+                                            Text="{Binding TransactionFromDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Focusable="False"/>
+
+                                <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                           VerticalAlignment="Bottom"
+                                           Margin="10 5 0 5">
+                                               to
+                                </TextBlock>
+
+                                <DatePicker Width="100"
+                                            materialDesign:HintAssist.Hint="To Date"
+                                            Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
+                                            Margin="10 5 0 5"
+                                            Text="{Binding TransactionToDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            Focusable="False" />
+
+                                <Button HorizontalAlignment="Left"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}"
+                                        ToolTip="Clear Filter"
+                                        Margin="10 5 0 5"
+                                        Width="28"
+                                        Height="28"
+                                        VerticalAlignment="Bottom"
+                                        Command="{Binding TransactionClearFilterBtn}">
+                                    <materialDesign:PackIcon Kind="FilterRemove"
+                                                             Height="16"
+                                                             Width="16" />
                                 </Button>
                             </StackPanel>
                         </DataTemplate>
@@ -367,9 +474,18 @@
                                   ColumnWidth="*"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
+                                  SelectionMode="Extended"
+                                  SelectedItem="{Binding SelectedTransactionItem}"
                                   ItemsSource="{Binding Source={StaticResource TransactionsListSortByDate}}">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridRow"
+                                       BasedOn="{StaticResource MaterialDesignDataGridRow}">
+                                    <Setter Property="IsSelected"
+                                            Value="{Binding Path=IsSelected, Mode=TwoWay}" />
+                                </Style>
+                            </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Binding="{Binding IsSelected}"
+                                <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                         ElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnStyle}"
                                                         EditingElementStyle="{StaticResource MaterialDesignDataGridCheckBoxColumnEditingStyle}"
                                                         Width="auto">
@@ -378,14 +494,15 @@
                                         <Border Background="Transparent"
                                                 Padding="6 0 6 0"
                                                 HorizontalAlignment="Center">
-                                            <CheckBox HorizontalAlignment="Center" />
+                                            <CheckBox HorizontalAlignment="Center"
+                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.TransactionSelectAll}"/>
                                         </Border>
                                     </DataGridCheckBoxColumn.Header>
                                 </DataGridCheckBoxColumn>
                                 <DataGridTextColumn Header="Date"
                                                     Width="1*"
                                                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
-                                                    Binding="{Binding CreateDate,StringFormat=dd/MM/yy}"
+                                                    Binding="{Binding TransactionDate,StringFormat=dd/MM/yy}"
                                                     IsReadOnly="True"
                                                     SortDirection="Ascending" />
                                 <DataGridTextColumn Header="Name"

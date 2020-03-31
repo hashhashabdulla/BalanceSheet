@@ -13,14 +13,15 @@ table.minimalistBlack td, table.minimalistBlack th {
 table.minimalistBlack tbody td {
 	font-family: Courier New, Courier, monospace;
 	font-size: 16px;
+	font-weight: bold;
 }
 
-	table.minimalistBlack thead {
-		background: #CFCFCF;
-		border-top: 1px solid #000000;
-		border-bottom: 1px solid #000000;
-		display: table-header-group;
-	}
+table.minimalistBlack thead {
+	background: #CFCFCF;
+	border-top: 1px solid #000000;
+	border-bottom: 1px solid #000000;
+	display: table-header-group;
+}
 
 table.minimalistBlack thead th {
 	font-size: 24px;
@@ -30,15 +31,18 @@ table.minimalistBlack thead th {
 	text-align: center;
 }
 
-	table.minimalistBlack tfoot {
-		font-size: 20px;
-		font-family: Courier New, Courier, monospace;
-		font-weight: bold;
-		color: #000000;
-		border-top: 1px solid #000000;
-		display: table-footer-group;
-	}
+table.minimalistBlack tfoot {
+	color: #000000;
+	border-top: 1px solid #000000;
+	display: table-footer-group;
+}
 
-table.minimalistBlack tfoot td {
-	font-size: 14px;
+table.minimalistBlack tfoot th {
+	font-size: 20px;
+	font-family: Courier New, Courier, monospace;
+	font-weight: bold;
+}
+
+h4 {
+	font-family: Courier New, Courier, monospace;
 }

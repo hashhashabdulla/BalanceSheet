@@ -15,6 +15,7 @@ namespace BalanceSheet.ViewModel
     class CreateNewCustomerViewModel : INotifyPropertyChanged
     {
         private string _customerName;
+        private string _transactionDate;
         private string _openingBalance;
 
         public string CustomerName
@@ -26,6 +27,19 @@ namespace BalanceSheet.ViewModel
                 {
                     _customerName = value;
                     OnPropertyChanged("CustomerName");
+                }
+            }
+        }
+
+        public string TransactionDate
+        {
+            get { return _transactionDate; }
+            set
+            {
+                if (value != _transactionDate)
+                {
+                    _transactionDate = value;
+                    OnPropertyChanged("TransactionDate");
                 }
             }
         }
