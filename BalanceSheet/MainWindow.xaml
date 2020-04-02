@@ -20,7 +20,8 @@
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
         Background="{DynamicResource MaterialDesignPaper}"
-        FontFamily="{DynamicResource MaterialDesignFont}">
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Closing="Window_Closing">
     <Window.Resources>
         <converter:AmountToColorConverter x:Key="AmountToColorConverter" />
         <converter:AmountSymbolConverter x:Key="AmountSymbolConverter" />
@@ -142,7 +143,7 @@
                     <ToggleButton Margin="3 10 10 10"
                                   VerticalAlignment="Center"
                                   Command="{Binding ThemeToggleCommand}"
-                                  IsChecked="{Binding DarkThemeEnabled}" />
+                                  IsChecked="{Binding DarkThemeEnabled, Mode=TwoWay}" />
                 </StackPanel>
             </Grid>
             <Grid DockPanel.Dock="Top">
@@ -475,7 +476,7 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   SelectionMode="Extended"
-                                  SelectedItem="{Binding SelectedTransactionItem}"
+                                  SelectedItem="{Binding SelectedTransactionItem, Mode=TwoWay}"
                                   ItemsSource="{Binding Source={StaticResource TransactionsListSortByDate}}">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridRow"

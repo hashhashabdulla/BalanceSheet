@@ -14,11 +14,25 @@ namespace BalanceSheet.ViewModel
 {
     public class CreateNewTransactionViewModel : INotifyPropertyChanged
     {
+        private string _titleText;
         private string _description;
         private string _transactionDate;
         private string _amount;
         private Customer _selectedCustomer;
         private bool _customerNameEnabled;
+
+        public string TitleText
+        {
+            get { return _titleText; }
+            set
+            {
+                if (value != _titleText)
+                {
+                    _titleText = value;
+                    OnPropertyChanged("TitleText");
+                }
+            }
+        }
 
         public string Description
         {
@@ -98,25 +112,31 @@ namespace BalanceSheet.ViewModel
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public CreateNewTransactionViewModel(List<Customer> customers)
+        public CreateNewTransactionViewModel(List<Customer> customers, string titleText)
         {
             //Create new entry with customer selection enabled
             OKClick = new RelayCommand<object>(p => OnOkClick());
             CustomerList = new ObservableCollection<Customer>(customers);
             SelectedCustomer = CustomerList[0];
             CustomerNameEnabled = true;
+
+            TransactionDate = DateTime.Today.ToShortDateString();
+            TitleText = titleText;
         }
 
-        public CreateNewTransactionViewModel(List<Customer> customers, Customer selectedCustomer)
+        public CreateNewTransactionViewModel(List<Customer> customers, Customer selectedCustomer, string titleText)
         {
             //Create new entry with customer selection disabled
             OKClick = new RelayCommand<object>(p => OnOkClick());
             CustomerList = new ObservableCollection<Customer>(customers);
             SelectedCustomer = selectedCustomer;
             CustomerNameEnabled = false;
+
+            TransactionDate = DateTime.Today.ToShortDateString();
+            TitleText = titleText;
         }
 
-        public CreateNewTransactionViewModel(List<Customer> customers, Transaction selectedTransactionItem, bool customerSelectionEnabled)
+        public CreateNewTransactionViewModel(List<Customer> customers, Transaction selectedTransactionItem, string titleText, bool customerSelectionEnabled)
         {
             //Edit transaction entry
             OKClick = new RelayCommand<object>(p => OnOkClick());
@@ -125,11 +145,14 @@ namespace BalanceSheet.ViewModel
             Description = selectedTransactionItem.Description;
             Amount = selectedTransactionItem.Amount.ToString();
             CustomerNameEnabled = customerSelectionEnabled;
+
+            TransactionDate = ((DateTime)selectedTransactionItem.TransactionDate).ToShortDateString();
+            TitleText = titleText;
         }
 
         private void OnOkClick()
         {
-            if (!HasError)
+            if (!HasError && TransactionDate != null && TransactionDate != "")
             {
                 DialogHost.CloseDialogCommand.Execute(true, null);
             }

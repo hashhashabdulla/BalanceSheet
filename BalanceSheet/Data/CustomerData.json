@@ -1,3 +1,10 @@
 ﻿[
-	
+	{
+		"CustomerName": "John Doe",
+		"TotalReceived": 9000.0,
+		"TotalPaid": 0.0,
+		"TotalBalance": 9000.0,
+		"CreateDate": "2020-04-02T08:39:29.6232665+05:30",
+		"ModDate": "2020-04-02T08:39:29.6232665+05:30"
+	}
 ]

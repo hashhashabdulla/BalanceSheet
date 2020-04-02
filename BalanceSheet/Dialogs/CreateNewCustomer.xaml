@@ -68,8 +68,17 @@
                     FontSize="18"
                     VerticalAlignment="Center"
                     Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
-                    Margin="10"
-                    Text="{Binding TransactionDate, Mode=TwoWay}" />
+                    Margin="10">
+            <DatePicker.Text>
+                <Binding Path="TransactionDate"
+                         Mode="TwoWay"
+                         UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <rules:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </DatePicker.Text>
+        </DatePicker>
 
         <TextBox
             Grid.Row="3"

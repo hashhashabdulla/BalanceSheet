@@ -50,11 +50,13 @@ namespace BalanceSheet.Helper
             {
                 //Total Received
                 resultTransaction.Received = amount;
+                resultTransaction.Paid = 0;
             }
             else
             {
                 //Total Paid
                 resultTransaction.Paid = Math.Abs(amount);
+                resultTransaction.Received = 0;
             }
             //Total Balance
             resultTransaction.Amount = amount;

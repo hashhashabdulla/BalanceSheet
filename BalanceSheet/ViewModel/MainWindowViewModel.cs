@@ -20,6 +20,7 @@ namespace BalanceSheet.ViewModel
         private Customer _selectedCustomer;
         private Transaction _selectedTransactionItem;
         private Transaction _selectedCustomerTransactionItem;
+        private bool _darkThemeEnabled;
         private string _customerFirtLetter;
         private double _customerReceived;
         private double _customerPaid;
@@ -41,7 +42,6 @@ namespace BalanceSheet.ViewModel
         List<Transaction> selectedTransactionsList = new List<Transaction>();
         List<Transaction> selectedCustomerTransactionsList = new List<Transaction>();
 
-        public bool DarkThemeEnabled { get; set; }
         public ICommand ThemeToggleCommand { get; set; }
         public ICommand CreateNewCustomerCommand { get; set; }
         public ICommand RemoveCustomerCommand { get; set; }
@@ -100,6 +100,20 @@ namespace BalanceSheet.ViewModel
             }
         }
 
+        public bool DarkThemeEnabled
+        {
+            get { return _darkThemeEnabled; }
+            set
+            {
+                if (value != _darkThemeEnabled)
+                {
+                    _darkThemeEnabled = value;
+                    OnPropertyChanged("DarkThemeEnabled");
+                    OnThemeToggle();
+                }
+                OnCustomerTransactionSelectAllChanged();
+            }
+        }
         public string CustomerFirstLetter
         {
             get { return _customerFirtLetter; }
@@ -108,7 +122,7 @@ namespace BalanceSheet.ViewModel
                 if (value != _customerFirtLetter)
                 {
                     _customerFirtLetter = value;
-                    OnPropertyChanged("SelectedCustomer");
+                    OnPropertyChanged("CustomerFirstLetter");
                 }
             }
         }
@@ -353,11 +367,30 @@ namespace BalanceSheet.ViewModel
 
         private void Initialize()
         {
+            DarkThemeEnabled = Properties.Settings.Default.DarkThemeEnabled;
             //Load Data
             LoadCustomerList();
             LoadTransactionList();
             //Assign first customer in the list by default to selected customer
             SelectedCustomer = CustomerList != null && CustomerList.Count > 0 ? CustomerList[0] : new Customer();
+        }
+
+        private void OnThemeToggle()
+        {
+            if (DarkThemeEnabled)
+            {
+                Properties.Settings.Default.DarkThemeEnabled = true;
+                var app = (App)Application.Current;
+                Uri uri = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml");
+                app.ChangeTheme(uri);
+            }
+            else
+            {
+                Properties.Settings.Default.DarkThemeEnabled = false;
+                var app = (App)Application.Current;
+                Uri uri = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml");
+                app.ChangeTheme(uri);
+            }
         }
 
         private void LoadCustomerList()
@@ -366,6 +399,8 @@ namespace BalanceSheet.ViewModel
             {
                 CustomerList = new ObservableCollection<Customer>(JsonHelper.LoadJsonFromFile<Customer>(@"Data\CustomerData.json"));
 
+                CustomerTransactionsList = new ObservableCollection<Transaction>();
+                CustomerTransactionsList.CollectionChanged += CustomerTransactionsList_CollectionChanged;
             }
             catch (Exception ex)
             {
@@ -377,7 +412,7 @@ namespace BalanceSheet.ViewModel
         {
             try
             {
-                allTransactionsList = JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json").OrderByDescending(o => o.CreateDate).ToList();
+                allTransactionsList = JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json").OrderByDescending(o => o.TransactionDate).ToList();
                 TransactionsList = new ObservableCollection<Transaction>(allTransactionsList);
                 TransactionsList.CollectionChanged += TransactionsList_CollectionChanged;
                 //Call the event manually first time
@@ -413,12 +448,12 @@ namespace BalanceSheet.ViewModel
 
         private void TransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            //First clear all the values
+            TransactionReceived = 0;
+            TransactionPaid = 0;
+            TransactionBalance = 0;
             if (TransactionsList != null && TransactionsList.Count > 0)
             {
-                //First clear all the values
-                TransactionReceived = 0;
-                TransactionPaid = 0;
-                TransactionBalance = 0;
                 foreach (var item in TransactionsList)
                 {
                     TransactionReceived += item.Received;
@@ -465,20 +500,16 @@ namespace BalanceSheet.ViewModel
         {
             try
             {
-                _customerFirtLetter = SelectedCustomer.CustomerName.Substring(0, 1);
-                List<Transaction> transactions = allTransactionsList.FindAll(o => o.CustomerName == SelectedCustomer.CustomerName).OrderByDescending(o => o.CreateDate).ToList();
+                CustomerFirstLetter = SelectedCustomer.CustomerName.Substring(0, 1);
+                List<Transaction> transactions = allTransactionsList.FindAll(o => o.CustomerName == SelectedCustomer.CustomerName).OrderByDescending(o => o.TransactionDate).ToList();
 
-                if(CustomerTransactionsList == null)
+                CustomerTransactionsList.Clear();
+                foreach (Transaction item in transactions)
                 {
-                    CustomerTransactionsList = new ObservableCollection<Transaction>(transactions);
-                    CustomerTransactionsList.CollectionChanged += CustomerTransactionsList_CollectionChanged;
-                    //Call the event manually first time
-                    CustomerTransactionsList_CollectionChanged(null, null);
+                    CustomerTransactionsList.Add(item);
                 }
-                else
-                {
-                    OnCustomerFromDateChanged();
-                }
+
+                OnCustomerFromDateChanged();
             }
             catch (Exception ex)
             {
@@ -488,12 +519,12 @@ namespace BalanceSheet.ViewModel
 
         private void CustomerTransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            //First clear all the values
+            CustomerReceived = 0;
+            CustomerPaid = 0;
+            CustomerBalance = 0;
             if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
             {
-                //First clear all the values
-                CustomerReceived = 0;
-                CustomerPaid = 0;
-                CustomerBalance = 0;
                 foreach (var item in CustomerTransactionsList)
                 {
                     CustomerReceived += item.Received;
@@ -535,22 +566,6 @@ namespace BalanceSheet.ViewModel
             }
         }
 
-        private void OnThemeToggle()
-        {
-            if (DarkThemeEnabled)
-            {
-                var app = (App)Application.Current;
-                Uri uri = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml");
-                app.ChangeTheme(uri);
-            }
-            else
-            {
-                var app = (App)Application.Current;
-                Uri uri = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml");
-                app.ChangeTheme(uri);
-            }
-        }
-
         private async void OnCreateNewCustomerClickedAsync()
         {
             var createNewCustomerView = new CreateNewCustomer()
@@ -573,7 +588,7 @@ namespace BalanceSheet.ViewModel
                     if (existingCustomer == null)
                     {
                         string customerName = customerViewModel.CustomerName;
-                        string description = "Opening Balance";
+                        string description = AppConstants.OPENING_BALANCE;
                         DateTime transactionDate = DateTime.Parse(customerViewModel.TransactionDate);
                         double amount = double.Parse(customerViewModel.OpeningBalance);
 
@@ -586,7 +601,7 @@ namespace BalanceSheet.ViewModel
                     }
                     else
                     {
-                        DialogHelper.ShowAlertDialogAsync("Customer already exists!");
+                        DialogHelper.ShowAlertDialogAsync(AppConstants.ERR_CUSTOMER_ALREADY_EXISTS);
                     }
                 }
             }
@@ -603,11 +618,10 @@ namespace BalanceSheet.ViewModel
                 try
                 {
                     //Show dialog
-                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    bool result = await DialogHelper.ShowYesNoDialogAsync(AppConstants.MSG_DELETE_CONFIRM);
                     //check the result...
                     if (result)
                     {
-                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
                         string customerName = SelectedCustomer.CustomerName;
 
                         allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, null, customerName, true);
@@ -631,7 +645,7 @@ namespace BalanceSheet.ViewModel
             {
                 var createNewCustomerEntryDialog = new CreateNewTransaction()
                 {
-                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomer)
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomer, AppConstants.NEW_ENTRY)
                 };
 
                 try
@@ -671,7 +685,7 @@ namespace BalanceSheet.ViewModel
             {
                 var editCustomerTransactionDialog = new CreateNewTransaction()
                 {
-                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomerTransactionItem, false)
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedCustomerTransactionItem, AppConstants.EDIT_ENTRY, false)
                 };
 
                 try
@@ -713,7 +727,7 @@ namespace BalanceSheet.ViewModel
                 try
                 {
                     //Show dialog
-                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    bool result = await DialogHelper.ShowYesNoDialogAsync(AppConstants.MSG_DELETE_CONFIRM);
                     //check the result...
                     if ((bool)result)
                     {
@@ -721,8 +735,13 @@ namespace BalanceSheet.ViewModel
 
                         string transactionId = SelectedCustomerTransactionItem.TransactionId;
                         string customerName = SelectedCustomer.CustomerName;
+                        List<Transaction> selectedList = new List<Transaction>();
+                        foreach (var item in selectedCustomerTransactionsList)
+                        {
+                            selectedList.Add(allTransactionsList.First(o => o.TransactionId == item.TransactionId));
+                        }
 
-                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedCustomerTransactionsList, customerName, false);
+                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
                         SelectedCustomer = CustomerList[selectedCustomerIndex];
@@ -743,7 +762,7 @@ namespace BalanceSheet.ViewModel
             {
                 var createNewTransactionEntryDialog = new CreateNewTransaction()
                 {
-                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList())
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), AppConstants.NEW_ENTRY)
                 };
 
                 try
@@ -783,7 +802,7 @@ namespace BalanceSheet.ViewModel
             {
                 var editTransactionDialog = new CreateNewTransaction()
                 {
-                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedTransactionItem, true)
+                    DataContext = new CreateNewTransactionViewModel(CustomerList.ToList(), SelectedTransactionItem, AppConstants.EDIT_ENTRY, true)
                 };
 
                 try
@@ -825,16 +844,21 @@ namespace BalanceSheet.ViewModel
                 try
                 {
                     //Show dialog
-                    bool result = await DialogHelper.ShowYesNoDialogAsync("Are you sure you want to Delete?");
+                    bool result = await DialogHelper.ShowYesNoDialogAsync(AppConstants.MSG_DELETE_CONFIRM);
                     //check the result...
                     if ((bool)result)
                     {
                         int selectedCustomerIndex = CustomerList.IndexOf(SelectedCustomer);
-
-                        string transactionId = SelectedCustomerTransactionItem.TransactionId;
+                        
                         string customerName = SelectedCustomer.CustomerName;
+                        List<Transaction> selectedList = new List<Transaction>();
+                        foreach (var item in selectedTransactionsList)
+                        {
+                            selectedList.Add(allTransactionsList.First(o => o.TransactionId == item.TransactionId));
+                        }
 
-                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedTransactionsList, customerName, false);
+
+                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
                         SelectedCustomer = CustomerList[selectedCustomerIndex];

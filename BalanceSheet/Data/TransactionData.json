@@ -1,3 +1,13 @@
 ﻿[
-	
+	{
+		"TransactionId": "20204283929621",
+		"CustomerName": "John Doe",
+		"Description": "Opening Balance",
+		"Received": 9000.0,
+		"Paid": 0.0,
+		"Amount": 9000.0,
+		"TransactionDate": "1995-12-13T00:00:00",
+		"CreateDate": "2020-04-02T08:39:29.6212533+05:30",
+		"ModDate": "2020-04-02T08:39:29.6222683+05:30"
+	}
 ]

@@ -32,11 +32,10 @@
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
             Mode="Accent">
-            <TextBlock
-                Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Center">
-                NEW ENTRY
+            <TextBlock Text="{Binding TitleText}"
+                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center">
             </TextBlock>
         </materialDesign:ColorZone>
 
@@ -67,14 +66,23 @@
             Text="{Binding Description, Mode=TwoWay}"/>
 
         <DatePicker Grid.Row="3"
-                 Grid.Column="0"
-                 Grid.ColumnSpan="2"
-                 materialDesign:HintAssist.Hint="Date"
-                 FontSize="18"
-                 VerticalAlignment="Center"
-                 Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
-                 Margin="10"
-                 Text="{Binding TransactionDate, Mode=TwoWay}" />
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    materialDesign:HintAssist.Hint="Date"
+                    FontSize="18"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
+                    Margin="10">
+            <DatePicker.Text>
+                <Binding Path="TransactionDate"
+                         Mode="TwoWay"
+                         UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <rules:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </DatePicker.Text>
+        </DatePicker>
 
         <TextBox
             Grid.Row="4"

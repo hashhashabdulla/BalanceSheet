@@ -71,11 +71,12 @@ namespace BalanceSheet.ViewModel
         public CreateNewCustomerViewModel()
         {
             OKClick = new RelayCommand<object>(p => OnOkClick());
+            TransactionDate = DateTime.Today.ToShortTimeString();
         }
 
         void OnOkClick()
         {
-            if (!HasError)
+            if (!HasError && CustomerName != null && CustomerName != "" && TransactionDate != null && TransactionDate != "")
             {
                 DialogHost.CloseDialogCommand.Execute(true, null);
             }
