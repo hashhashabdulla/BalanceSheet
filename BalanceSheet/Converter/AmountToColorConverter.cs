@@ -19,7 +19,7 @@ namespace BalanceSheet.Converter
             {
                 if(amount >= 0)
                 {
-                    return Brushes.Green;
+                    return new BrushConverter().ConvertFromString("#0CB70C");
                 }
                 else
                 {

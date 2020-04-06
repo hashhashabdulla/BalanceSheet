@@ -16,7 +16,8 @@ namespace BalanceSheet.ViewModel
     {
         private string _titleText;
         private string _description;
-        private string _transactionDate;
+        private DateTime? _transactionDate;
+        private DateTime? _transactionTime;
         private string _amount;
         private Customer _selectedCustomer;
         private bool _customerNameEnabled;
@@ -47,7 +48,7 @@ namespace BalanceSheet.ViewModel
             }
         }
 
-        public string TransactionDate
+        public DateTime? TransactionDate
         {
             get { return _transactionDate; }
             set
@@ -56,6 +57,19 @@ namespace BalanceSheet.ViewModel
                 {
                     _transactionDate = value;
                     OnPropertyChanged("TransactionDate");
+                }
+            }
+        }
+
+        public DateTime? TransactionTime
+        {
+            get { return _transactionTime; }
+            set
+            {
+                if (value != _transactionTime)
+                {
+                    _transactionTime = value;
+                    OnPropertyChanged("TransactionTime");
                 }
             }
         }
@@ -120,7 +134,8 @@ namespace BalanceSheet.ViewModel
             SelectedCustomer = CustomerList[0];
             CustomerNameEnabled = true;
 
-            TransactionDate = DateTime.Today.ToShortDateString();
+            TransactionDate = DateTime.Now;
+            TransactionTime = DateTime.Now;
             TitleText = titleText;
         }
 
@@ -132,7 +147,8 @@ namespace BalanceSheet.ViewModel
             SelectedCustomer = selectedCustomer;
             CustomerNameEnabled = false;
 
-            TransactionDate = DateTime.Today.ToShortDateString();
+            TransactionDate = DateTime.Now;
+            TransactionTime = DateTime.Now;
             TitleText = titleText;
         }
 
@@ -143,16 +159,26 @@ namespace BalanceSheet.ViewModel
             CustomerList = new ObservableCollection<Customer>(customers);
             SelectedCustomer = customers.FirstOrDefault(o => o.CustomerName == selectedTransactionItem.CustomerName);
             Description = selectedTransactionItem.Description;
-            Amount = selectedTransactionItem.Amount.ToString();
+            if (selectedTransactionItem.Received == 0)
+            {
+                //If received is 0, display paid amount
+                Amount = (-Math.Abs(selectedTransactionItem.Paid)).ToString();
+            }
+            else
+            {
+                //If paid is 0, display received amount
+                Amount = selectedTransactionItem.Received.ToString();
+            }
             CustomerNameEnabled = customerSelectionEnabled;
 
-            TransactionDate = ((DateTime)selectedTransactionItem.TransactionDate).ToShortDateString();
+            TransactionDate = selectedTransactionItem.TransactionDate;
+            TransactionTime = selectedTransactionItem.TransactionDate;
             TitleText = titleText;
         }
 
         private void OnOkClick()
         {
-            if (!HasError && TransactionDate != null && TransactionDate != "")
+            if (!HasError && TransactionDate != null && TransactionTime != null)
             {
                 DialogHost.CloseDialogCommand.Execute(true, null);
             }

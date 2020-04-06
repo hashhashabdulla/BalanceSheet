@@ -77,11 +77,36 @@ namespace BalanceSheet.Helper
             return resultTransaction;
         }
 
-        public static void UpdateTransactionsListByDate(ObservableCollection<Transaction> transactionsList, Customer customer, DateTime? fromDate, DateTime? toDate)
+        public static int GetTransactionsListCountByDate(Customer customer, DateTime? fromDate, DateTime? toDate)
         {
             try
             {
                 List<Transaction> transactions = JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json");
+
+                if (customer != null)
+                {
+                    //Filter transactions list by customer
+                    transactions = transactions.FindAll(o => o.CustomerName == customer.CustomerName);
+                }
+                if (fromDate != null && toDate != null)
+                {
+                    //Filter transactions list based on fromDate and toDate
+                    transactions = transactions.FindAll(o => ((DateTime)o.TransactionDate).Date >= fromDate && ((DateTime)o.TransactionDate).Date <= toDate);
+                }
+
+                return transactions.Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+                return 0;
+            }
+        }
+
+        public static void UpdateTransactionsListByDate(List<Transaction> transactions, ObservableCollection<Transaction> transactionsList, Customer customer, DateTime? fromDate, DateTime? toDate, bool isTransactionCollapsed)
+        {
+            try
+            {
                 transactionsList.Clear();
 
                 if(customer != null)
@@ -94,6 +119,10 @@ namespace BalanceSheet.Helper
                     //Filter transactions list based on fromDate and toDate
                     transactions = transactions.FindAll(o => ((DateTime)o.TransactionDate).Date >= fromDate && ((DateTime)o.TransactionDate).Date <= toDate);
                 }
+                if (isTransactionCollapsed)
+                {
+                    transactions = TransactionsGroupByCustomer(transactions);
+                }
 
                 foreach (Transaction transaction in transactions)
                 {
@@ -104,6 +133,56 @@ namespace BalanceSheet.Helper
             {
                 Console.WriteLine(ex.StackTrace);
             }
+        }
+
+        private static List<Transaction> TransactionsGroupByCustomer(List<Transaction> transactions)
+        {
+            List<Transaction> result = new List<Transaction>();
+            List<string> uniqueCustomerNamesList = new List<string>();
+            foreach (Transaction item in transactions)
+            {
+                if (!uniqueCustomerNamesList.Contains(item.CustomerName))
+                {
+                    uniqueCustomerNamesList.Add(item.CustomerName);
+                    List<Transaction> customerTransactions = transactions.FindAll(o => o.CustomerName == item.CustomerName);
+                    if (customerTransactions != null && customerTransactions.Count > 0)
+                    {
+                        //Order by transaction date descending to get the most recent transaction of the customer
+                        customerTransactions = customerTransactions.OrderByDescending(o => o.TransactionDate).ToList();
+                        string transactionId = customerTransactions[0].TransactionId;
+                        string customerName = customerTransactions[0].CustomerName;
+                        DateTime transactionDate = (DateTime)customerTransactions[0].TransactionDate;
+                        DateTime createDate = (DateTime)customerTransactions[0].CreateDate;
+                        DateTime modDate = (DateTime)customerTransactions[0].ModDate;
+                        double received = 0;
+                        double paid = 0;
+                        double amount = 0;
+
+                        foreach (Transaction customerTransactionItem in customerTransactions)
+                        {
+                            received += customerTransactionItem.Received;
+                            paid += customerTransactionItem.Paid;
+                            amount += customerTransactionItem.Amount;
+                        }
+
+                        Transaction customerTransaction = new Transaction()
+                        {
+                            TransactionId = transactionId,
+                            CustomerName = customerName,
+                            TransactionDate = transactionDate,
+                            CreateDate = createDate,
+                            ModDate = modDate,
+                            Received = received,
+                            Paid = paid,
+                            Amount = amount
+                        };
+
+                        result.Add(customerTransaction);
+                    }
+                }
+            }
+
+            return result;
         }
 
         public static Customer UpdateCustomer(Customer customer, List<Transaction> transactionsList)
@@ -147,6 +226,27 @@ namespace BalanceSheet.Helper
                 //If customer is already existing
                 customer = UpdateCustomer(customer, allTransactionsList);
             }
+
+            SaveDetails(customerList.ToList(), allTransactionsList);
+
+            return allTransactionsList;
+        }
+
+        public static List<Transaction> EditCustomerName(ObservableCollection<Customer> customerList, List<Transaction> allTransactionsList, string oldCustomerName, string newCustomerName)
+        {
+            //Get all transactions of the customer
+            List<Transaction> transactions = allTransactionsList.FindAll(o => o.CustomerName == oldCustomerName);
+            //Update Transaction details
+            foreach (Transaction item in transactions)
+            {
+                //Update customer name
+                int index = allTransactionsList.IndexOf(item);
+                allTransactionsList[index].CustomerName = newCustomerName;
+            }
+            
+            //Update customer details
+            int customerIndex = customerList.ToList().FindIndex(o => o.CustomerName == oldCustomerName);
+            customerList[customerIndex].CustomerName = newCustomerName;
 
             SaveDetails(customerList.ToList(), allTransactionsList);
 

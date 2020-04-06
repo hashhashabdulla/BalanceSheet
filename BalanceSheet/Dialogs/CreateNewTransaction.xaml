@@ -63,17 +63,17 @@
             VerticalAlignment="Center"
             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
             Margin="10"
-            Text="{Binding Description, Mode=TwoWay}"/>
+            Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
         <DatePicker Grid.Row="3"
                     Grid.Column="0"
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="1"
                     materialDesign:HintAssist.Hint="Date"
                     FontSize="18"
                     VerticalAlignment="Center"
                     Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
                     Margin="10">
-            <DatePicker.Text>
+            <DatePicker.SelectedDate>
                 <Binding Path="TransactionDate"
                          Mode="TwoWay"
                          UpdateSourceTrigger="PropertyChanged">
@@ -81,8 +81,26 @@
                         <rules:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
                     </Binding.ValidationRules>
                 </Binding>
-            </DatePicker.Text>
+            </DatePicker.SelectedDate>
         </DatePicker>
+
+        <materialDesign:TimePicker Grid.Row="3"
+                                   Grid.Column="1"
+                                   FontSize="18"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignFloatingHintTimePicker}"
+                                   materialDesign:HintAssist.Hint="Time"
+                                   Margin="10">
+            <materialDesign:TimePicker.SelectedTime>
+                <Binding Path="TransactionTime"
+                         Mode="TwoWay"
+                         UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <rules:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </materialDesign:TimePicker.SelectedTime>
+        </materialDesign:TimePicker>
 
         <TextBox
             Grid.Row="4"

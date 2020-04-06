@@ -15,7 +15,8 @@ namespace BalanceSheet.ViewModel
     class CreateNewCustomerViewModel : INotifyPropertyChanged
     {
         private string _customerName;
-        private string _transactionDate;
+        private DateTime? _transactionDate;
+        private DateTime? _transactionTime;
         private string _openingBalance;
 
         public string CustomerName
@@ -31,7 +32,7 @@ namespace BalanceSheet.ViewModel
             }
         }
 
-        public string TransactionDate
+        public DateTime? TransactionDate
         {
             get { return _transactionDate; }
             set
@@ -40,6 +41,19 @@ namespace BalanceSheet.ViewModel
                 {
                     _transactionDate = value;
                     OnPropertyChanged("TransactionDate");
+                }
+            }
+        }
+
+        public DateTime? TransactionTime
+        {
+            get { return _transactionTime; }
+            set
+            {
+                if (value != _transactionTime)
+                {
+                    _transactionTime = value;
+                    OnPropertyChanged("TransactionTime");
                 }
             }
         }
@@ -71,12 +85,13 @@ namespace BalanceSheet.ViewModel
         public CreateNewCustomerViewModel()
         {
             OKClick = new RelayCommand<object>(p => OnOkClick());
-            TransactionDate = DateTime.Today.ToShortTimeString();
+            TransactionDate = DateTime.Now;
+            TransactionTime = DateTime.Now;
         }
 
         void OnOkClick()
         {
-            if (!HasError && CustomerName != null && CustomerName != "" && TransactionDate != null && TransactionDate != "")
+            if (!HasError && CustomerName != null && CustomerName != "" && TransactionDate != null && TransactionDate != null && TransactionTime != null)
             {
                 DialogHost.CloseDialogCommand.Execute(true, null);
             }

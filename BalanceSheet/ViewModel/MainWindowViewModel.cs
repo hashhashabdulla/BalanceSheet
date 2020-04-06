@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace BalanceSheet.ViewModel
@@ -21,6 +22,7 @@ namespace BalanceSheet.ViewModel
         private Transaction _selectedTransactionItem;
         private Transaction _selectedCustomerTransactionItem;
         private bool _darkThemeEnabled;
+        private bool _isTransactionCollapsed;
         private string _customerFirtLetter;
         private double _customerReceived;
         private double _customerPaid;
@@ -38,12 +40,18 @@ namespace BalanceSheet.ViewModel
         private string _transactionToDate;
         private bool _customerTransactionSelectAll;
         private bool _transactionSelectAll;
+        private ObservableCollection<Transaction> _transactionsList = new ObservableCollection<Transaction>();
+        private ICollectionView _transactionsListDataWrapper;
+        private ObservableCollection<Transaction> _customerTransactionsList = new ObservableCollection<Transaction>();
+        private ICollectionView _customerTransactionsListDataWrapper;
         private List<Transaction> allTransactionsList = new List<Transaction>();
         List<Transaction> selectedTransactionsList = new List<Transaction>();
         List<Transaction> selectedCustomerTransactionsList = new List<Transaction>();
 
         public ICommand ThemeToggleCommand { get; set; }
+        public ICommand TransactionCollapsedToggleCommand { get; set; }
         public ICommand CreateNewCustomerCommand { get; set; }
+        public ICommand EditCustomerCommand { get; set; }
         public ICommand RemoveCustomerCommand { get; set; }
         public ICommand CreateNewCustomerEntry { get; set; }
         public ICommand CreateNewTransactionEntry { get; set; }
@@ -57,8 +65,64 @@ namespace BalanceSheet.ViewModel
         public ICommand CustomerClearFilterBtn { get; set; }
         public ICommand TransactionClearFilterBtn { get; set; }
         public ObservableCollection<Customer> CustomerList { get; set; }
-        public ObservableCollection<Transaction> TransactionsList { get; set; }
-        public ObservableCollection<Transaction> CustomerTransactionsList { get; set; }
+        public ObservableCollection<Transaction> TransactionsList
+        {
+            get { return this._transactionsList; }
+            set
+            {
+                this._transactionsList = value;
+                this.TransactionsListDataWrapper = CollectionViewSource.GetDefaultView(_transactionsList);
+                OnPropertyChanged("TransactionsList");
+            }
+        }
+        public ICollectionView TransactionsListDataWrapper
+        {
+            get { return this._transactionsListDataWrapper; }
+            set
+            {
+                this._transactionsListDataWrapper = value;
+                OnPropertyChanged("TransactionsListDataWrapper");
+            }
+        }
+        public ObservableCollection<Transaction> CustomerTransactionsList
+        {
+            get { return this._customerTransactionsList; }
+            set
+            {
+                this._customerTransactionsList = value;
+                this.CustomerTransactionsListDataWrapper = CollectionViewSource.GetDefaultView(_customerTransactionsList);
+                CustomerTransactionsListDataWrapper.CollectionChanged += OnCustomerTransactionsListDataWrapperChange;
+                OnPropertyChanged("CustomerTransactionsList");
+            }
+        }
+
+        public ICollectionView CustomerTransactionsListDataWrapper
+        {
+            get { return this._customerTransactionsListDataWrapper; }
+            set
+            {
+                this._customerTransactionsListDataWrapper = value;
+                OnPropertyChanged("CustomerTransactionsListDataWrapper");
+            }
+        }
+
+        private void OnCustomerTransactionsListDataWrapperChange(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            double balance = 0;
+            foreach (Transaction item in CustomerTransactionsListDataWrapper.Cast<Transaction>().ToList())
+            {
+                //Make paid value negative
+                if (item.Paid > 0)
+                {
+                    item.Paid = -item.Paid; 
+                }
+
+                //Compute balance
+                balance = balance + item.Received + item.Paid;
+                item.Amount = balance;
+            }
+        }
+
         public Customer SelectedCustomer
         {
             get { return _selectedCustomer; }
@@ -69,10 +133,7 @@ namespace BalanceSheet.ViewModel
                     _selectedCustomer = value;
                     OnPropertyChanged("SelectedCustomer");
                 }
-                if (value != null)
-                {
-                    SelectedCustomerOnPropertyChanged();
-                }
+                SelectedCustomerOnPropertyChanged();
             }
         }
         public Transaction SelectedTransactionItem
@@ -109,7 +170,19 @@ namespace BalanceSheet.ViewModel
                 {
                     _darkThemeEnabled = value;
                     OnPropertyChanged("DarkThemeEnabled");
-                    OnThemeToggle();
+                }
+                OnThemeToggle();
+            }
+        }
+        public bool IsTransactionCollapsed
+        {
+            get { return _isTransactionCollapsed; }
+            set
+            {
+                if (value != _isTransactionCollapsed)
+                {
+                    _isTransactionCollapsed = value;
+                    OnPropertyChanged("IsTransactionCollapsed");
                 }
                 OnCustomerTransactionSelectAllChanged();
             }
@@ -345,7 +418,9 @@ namespace BalanceSheet.ViewModel
             try
             {
                 ThemeToggleCommand = new RelayCommand<object>(p => OnThemeToggle());
+                TransactionCollapsedToggleCommand = new RelayCommand<object>(p => OnTransactionCollapsedToggle());
                 CreateNewCustomerCommand = new RelayCommand<object>(p => OnCreateNewCustomerClickedAsync());
+                EditCustomerCommand = new RelayCommand<object>(p => OnEditCustomerClickedAsync());
                 RemoveCustomerCommand = new RelayCommand<object>(p => OnRemoveCustomerClickedAsync());
                 CreateNewCustomerEntry = new RelayCommand<object>(p => OnCreateNewCustomerEntryAsync());
                 CreateNewTransactionEntry = new RelayCommand<object>(p => OnCreateNewTransactionEntryAsync());
@@ -391,6 +466,16 @@ namespace BalanceSheet.ViewModel
                 Uri uri = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml");
                 app.ChangeTheme(uri);
             }
+        }
+
+        private void OnTransactionCollapsedToggle()
+        {
+            if (IsTransactionCollapsed)
+            {
+                IsTransactionEditEnabled = false;
+                IsTransactionDeleteEnabled = false;
+            }
+            OnTransactionFromDateChanged();
         }
 
         private void LoadCustomerList()
@@ -467,7 +552,8 @@ namespace BalanceSheet.ViewModel
         private void SelectedTransactionItemOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             selectedTransactionsList = TransactionsList.ToList().FindAll(o => o.IsSelected == true);
-            if (selectedTransactionsList != null)
+
+            if (selectedTransactionsList != null && !IsTransactionCollapsed)
             {
                 if (selectedTransactionsList.Count == 0)
                 {
@@ -501,13 +587,6 @@ namespace BalanceSheet.ViewModel
             try
             {
                 CustomerFirstLetter = SelectedCustomer.CustomerName.Substring(0, 1);
-                List<Transaction> transactions = allTransactionsList.FindAll(o => o.CustomerName == SelectedCustomer.CustomerName).OrderByDescending(o => o.TransactionDate).ToList();
-
-                CustomerTransactionsList.Clear();
-                foreach (Transaction item in transactions)
-                {
-                    CustomerTransactionsList.Add(item);
-                }
 
                 OnCustomerFromDateChanged();
             }
@@ -519,19 +598,33 @@ namespace BalanceSheet.ViewModel
 
         private void CustomerTransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            //First clear all the values
-            CustomerReceived = 0;
-            CustomerPaid = 0;
-            CustomerBalance = 0;
-            if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
+            int customerTransactionsCount = 0;
+            if (CustomerFromDate != null && CustomerFromDate != "" && CustomerToDate != null && CustomerToDate != "")
             {
-                foreach (var item in CustomerTransactionsList)
+                customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+            }
+            else
+            {
+                customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, null, null);
+            }
+            if (CustomerTransactionsList.Count >= customerTransactionsCount)
+            {
+                //First clear all the values
+                CustomerReceived = 0;
+                CustomerPaid = 0;
+                CustomerBalance = 0;
+                if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
                 {
-                    CustomerReceived += item.Received;
-                    CustomerPaid -= item.Paid;
-                    CustomerBalance += item.Amount;
-                    item.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
+                    foreach (var item in CustomerTransactionsList)
+                    {
+                        CustomerReceived += item.Received;
+                        CustomerPaid += item.Paid;
+                        item.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
+                    }
+                    CustomerBalance = CustomerReceived + CustomerPaid;
                 }
+
+                CustomerTransactionsListDataWrapper.SortDescriptions.Add(new SortDescription("TransactionDate", ListSortDirection.Ascending));
             }
         }
 
@@ -589,7 +682,8 @@ namespace BalanceSheet.ViewModel
                     {
                         string customerName = customerViewModel.CustomerName;
                         string description = AppConstants.OPENING_BALANCE;
-                        DateTime transactionDate = DateTime.Parse(customerViewModel.TransactionDate);
+                        DateTime transactionDate = ((DateTime)customerViewModel.TransactionDate).Date;
+                        transactionDate = transactionDate.Date + ((DateTime)customerViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(customerViewModel.OpeningBalance);
 
                         allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
@@ -608,6 +702,55 @@ namespace BalanceSheet.ViewModel
             catch (Exception ex)
             {
                 Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private async void OnEditCustomerClickedAsync()
+        {
+            if (SelectedCustomer != null)
+            {
+                //Get the old Customer name
+                string oldCustomerName = SelectedCustomer.CustomerName;
+
+                var editCustomerView = new EditCustomer()
+                {
+                    DataContext = new EditCustomerViewModel(oldCustomerName)
+                };
+
+                try
+                {
+                    //show the dialog
+                    var result = await DialogHost.Show(editCustomerView, "RootDialog");
+
+                    //check the result...
+                    if (result != null && (bool)result)
+                    {
+                        EditCustomerViewModel customerViewModel = (EditCustomerViewModel)editCustomerView.DataContext;
+                        var existingCustomer = CustomerList.FirstOrDefault(o => o.CustomerName == customerViewModel.CustomerName);
+
+                        //If existing customer is null, then go ahead with editing, else display alert
+                        if (existingCustomer == null)
+                        {
+                            string newCustomerName = customerViewModel.CustomerName;
+
+                            allTransactionsList = GeneralHelperClass.EditCustomerName(CustomerList, allTransactionsList, oldCustomerName, newCustomerName);
+
+                            //Make edited customer as the selected customer
+                            int customerIndex = CustomerList.ToList().FindIndex(o => o.CustomerName == newCustomerName);
+                            SelectedCustomer = CustomerList[customerIndex];
+                            //Refresh the transactions list
+                            OnTransactionFromDateChanged();
+                        }
+                        else
+                        {
+                            DialogHelper.ShowAlertDialogAsync(AppConstants.ERR_CUSTOMER_ALREADY_EXISTS);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                } 
             }
         }
 
@@ -661,7 +804,8 @@ namespace BalanceSheet.ViewModel
 
                         string customerName = newTransactionViewModel.SelectedCustomer.CustomerName;
                         string description = newTransactionViewModel.Description;
-                        DateTime transactionDate = DateTime.Parse(newTransactionViewModel.TransactionDate);
+                        DateTime transactionDate = ((DateTime)newTransactionViewModel.TransactionDate).Date;
+                        transactionDate = transactionDate.Date + ((DateTime)newTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(newTransactionViewModel.Amount);
 
                         allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
@@ -702,7 +846,8 @@ namespace BalanceSheet.ViewModel
                         string transactionId = SelectedCustomerTransactionItem.TransactionId;
                         string customerName = editTransactionViewModel.SelectedCustomer.CustomerName;
                         string description = editTransactionViewModel.Description;
-                        DateTime transactionDate = DateTime.Parse(editTransactionViewModel.TransactionDate);
+                        DateTime transactionDate = ((DateTime)editTransactionViewModel.TransactionDate).Date;
+                        transactionDate = transactionDate.Date + ((DateTime)editTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(editTransactionViewModel.Amount);
 
                         allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
@@ -778,7 +923,8 @@ namespace BalanceSheet.ViewModel
 
                         string customerName = newTransactionViewModel.SelectedCustomer.CustomerName;
                         string description = newTransactionViewModel.Description;
-                        DateTime transactionDate = DateTime.Parse(newTransactionViewModel.TransactionDate);
+                        DateTime transactionDate = ((DateTime)newTransactionViewModel.TransactionDate).Date;
+                        transactionDate = transactionDate.Date + ((DateTime)newTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(newTransactionViewModel.Amount);
 
                         allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
@@ -819,7 +965,8 @@ namespace BalanceSheet.ViewModel
                         string transactionId = SelectedTransactionItem.TransactionId;
                         string customerName = editTransactionViewModel.SelectedCustomer.CustomerName;
                         string description = editTransactionViewModel.Description;
-                        DateTime transactionDate = DateTime.Parse(editTransactionViewModel.TransactionDate);
+                        DateTime transactionDate = ((DateTime)editTransactionViewModel.TransactionDate).Date;
+                        transactionDate = transactionDate.Date + ((DateTime)editTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(editTransactionViewModel.Amount);
 
                         allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
@@ -881,12 +1028,16 @@ namespace BalanceSheet.ViewModel
                 {
                     CustomerToDate = CustomerFromDate;
 
-                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate), false);
                 }
                 else
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, null, null);
+                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, null, null, false);
                 } 
+            }
+            else
+            {
+                CustomerTransactionsList.Clear();
             }
         }
 
@@ -896,12 +1047,16 @@ namespace BalanceSheet.ViewModel
             {
                 if (CustomerToDate != null && CustomerToDate != "" && CustomerFromDate != null && CustomerFromDate != "")
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate), false);
                 }
                 else
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(CustomerTransactionsList, SelectedCustomer, null, null);
+                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, null, null, false);
                 } 
+            }
+            else
+            {
+                CustomerTransactionsList.Clear();
             }
         }
 
@@ -917,11 +1072,11 @@ namespace BalanceSheet.ViewModel
             {
                 TransactionToDate = TransactionFromDate;
 
-                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate));
+                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate), IsTransactionCollapsed);
             }
             else
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, null, null);
+                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, null, null, IsTransactionCollapsed);
             }
         }
 
@@ -929,11 +1084,11 @@ namespace BalanceSheet.ViewModel
         {
             if (TransactionToDate != null && TransactionToDate != "" && TransactionFromDate != null && TransactionFromDate != "")
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate));
+                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate), IsTransactionCollapsed);
             }
             else
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(TransactionsList, null, null, null);
+                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, null, null, IsTransactionCollapsed);
             }
         }
         
@@ -945,13 +1100,13 @@ namespace BalanceSheet.ViewModel
 
         private void OnPrintClick()
         {
-            PrintHelper printHelper = new PrintHelper(TransactionsList.ToList().OrderByDescending(o => o.TransactionDate).ToList(), false);
+            PrintHelper printHelper = new PrintHelper(TransactionsListDataWrapper.Cast<Transaction>().ToList(), false, IsTransactionCollapsed);
             printHelper.PrintDoc();
         }
 
         private void OnCustomerPrintClick()
         {
-            PrintHelper printHelper = new PrintHelper(CustomerTransactionsList.ToList().OrderByDescending(o => o.TransactionDate).ToList(), true);
+            PrintHelper printHelper = new PrintHelper(CustomerTransactionsListDataWrapper.Cast<Transaction>().ToList(), true, false);
             printHelper.PrintDoc();
         }
 
