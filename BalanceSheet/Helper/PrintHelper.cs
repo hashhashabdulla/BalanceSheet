@@ -122,7 +122,7 @@ namespace BalanceSheet.Helper
                 HtmlElement tbodydataElement6 = webBrowser.Document.CreateElement("td");
                 tbodydataElement6.SetAttribute("align", "right");
                 tbodydataElement6.InnerHtml = String.Format("{0:0.00}", item.Amount);
-                totalBalance += item.Amount;
+                totalBalance += item.TransAmount;
                 tbodyrowElement.AppendChild(tbodydataElement6);
 
                 tbodyElement.AppendChild(tbodyrowElement);
@@ -214,8 +214,8 @@ namespace BalanceSheet.Helper
                 }
                 HtmlElement tbodydataElement4 = webBrowser.Document.CreateElement("td");
                 tbodydataElement4.SetAttribute("align", "right");
-                tbodydataElement4.InnerHtml = String.Format("{0:0.00}", item.Amount);
-                totalBalance += item.Amount;
+                tbodydataElement4.InnerHtml = String.Format("{0:0.00}", item.TransAmount);
+                totalBalance += item.TransAmount;
                 tbodyrowElement.AppendChild(tbodydataElement4);
 
                 tbodyElement.AppendChild(tbodyrowElement);

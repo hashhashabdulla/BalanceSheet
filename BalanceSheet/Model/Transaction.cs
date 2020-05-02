@@ -81,6 +81,10 @@ namespace BalanceSheet.Model
                 }
             }
         }
+        public double TransAmount
+        {
+            get { return _received + _paid; }
+        }
         public double Amount
         {
             get { return _amount; }

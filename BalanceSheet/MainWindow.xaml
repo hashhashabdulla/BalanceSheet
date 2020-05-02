@@ -25,6 +25,7 @@
     <Window.Resources>
         <converter:AmountToColorConverter x:Key="AmountToColorConverter" />
         <converter:AmountSymbolConverter x:Key="AmountSymbolConverter" />
+        <converter:VisibilityToBooleanConverter x:Key="VisibilityToBooleanConverter" />
 
         <CollectionViewSource Source="{Binding CustomerList}"
                               x:Key="CustomerListSortByName">
@@ -131,6 +132,12 @@
                                   Command="{Binding ThemeToggleCommand}"
                                   IsChecked="{Binding DarkThemeEnabled, Mode=TwoWay}" />
                 </StackPanel>
+
+                <Grid Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      Background="#AA000000"
+                      Visibility="{Binding Path=IsProgressVisible, Converter={StaticResource VisibilityToBooleanConverter}}">
+                </Grid>
             </Grid>
             <Grid DockPanel.Dock="Top">
                 <Grid.ColumnDefinitions>
@@ -207,14 +214,14 @@
                                                 Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
                                                 Margin="5 5 0 0"
                                                 Text="{Binding CustomerFromDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                Focusable="False"/>
-                                    
+                                                Focusable="False" />
+
                                     <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
                                                VerticalAlignment="Bottom"
                                                Margin="10 5 0 0">
                                                to
                                     </TextBlock>
-                                    
+
                                     <DatePicker Width="100"
                                                 materialDesign:HintAssist.Hint="To Date"
                                                 Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
@@ -273,7 +280,7 @@
                                                 Padding="6 0 6 0"
                                                 HorizontalAlignment="Center">
                                             <CheckBox HorizontalAlignment="Center"
-                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.CustomerTransactionSelectAll}"/>
+                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.CustomerTransactionSelectAll}" />
                                         </Border>
                                     </DataGridCheckBoxColumn.Header>
                                 </DataGridCheckBoxColumn>
@@ -444,7 +451,7 @@
                                             Style="{StaticResource MaterialDesignFloatingHintDatePicker}"
                                             Margin="25 5 0 5"
                                             Text="{Binding TransactionFromDate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                            Focusable="False"/>
+                                            Focusable="False" />
 
                                 <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
                                            VerticalAlignment="Bottom"
@@ -475,7 +482,7 @@
                                 <TextBlock Text="Collapsed"
                                            Margin="25 0 0 10"
                                            VerticalAlignment="Bottom" />
-                                
+
                                 <ToggleButton Margin="10 0 0 10"
                                               VerticalAlignment="Bottom"
                                               Style="{StaticResource MaterialDesignSwitchAccentToggleButton}"
@@ -521,7 +528,7 @@
                                                 Padding="6 0 6 0"
                                                 HorizontalAlignment="Center">
                                             <CheckBox HorizontalAlignment="Center"
-                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.TransactionSelectAll}"/>
+                                                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},Path=DataContext.TransactionSelectAll}" />
                                         </Border>
                                     </DataGridCheckBoxColumn.Header>
                                 </DataGridCheckBoxColumn>
@@ -531,7 +538,7 @@
                                                     Binding="{Binding TransactionDate,StringFormat=dd/MM/yy}"
                                                     IsReadOnly="True" />
                                 <DataGridTextColumn Header="Name"
-                                                    Width="2.25*"
+                                                    Width="2*"
                                                     IsReadOnly="True"
                                                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                                                     Binding="{Binding CustomerName}">
@@ -543,7 +550,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="Description"
-                                                    Width="3.25*"
+                                                    Width="2*"
                                                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                                                     Binding="{Binding Description}"
                                                     IsReadOnly="True">
@@ -555,16 +562,16 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="Amount"
-                                                    Width="1*"
+                                                    Width="1.5*"
                                                     FontWeight="Bold"
                                                     IsReadOnly="True"
                                                     HeaderStyle="{StaticResource HeaderCenterAlign}"
                                                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
-                                                    Binding="{Binding Amount, Converter={StaticResource AmountSymbolConverter}}">
+                                                    Binding="{Binding TransAmount, Converter={StaticResource AmountSymbolConverter}}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="{x:Type TextBlock}">
                                             <Setter Property="Foreground"
-                                                    Value="{Binding Amount, Converter={StaticResource AmountToColorConverter}}" />
+                                                    Value="{Binding TransAmount, Converter={StaticResource AmountToColorConverter}}" />
                                             <Setter Property="HorizontalAlignment"
                                                     Value="Right" />
                                         </Style>
@@ -617,6 +624,17 @@
                         </materialDesign:Card>
                     </Grid>
                 </GroupBox>
+
+                <Grid Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      Background="#AA000000"
+                      Visibility="{Binding Path=IsProgressVisible, Converter={StaticResource VisibilityToBooleanConverter}}">
+                    <ProgressBar Style="{DynamicResource MaterialDesignCircularProgressBar}"
+                                 IsIndeterminate="True"
+                                 Value="0"
+                                 Height="50"
+                                 Width="50"/>
+                </Grid>
             </Grid>
         </DockPanel>
     </materialDesign:DialogHost>

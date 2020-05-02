@@ -98,8 +98,12 @@
     </ApplicationDefinition>
     <Compile Include="Converter\AmountSymbolConverter.cs" />
     <Compile Include="Converter\AmountToColorConverter.cs" />
+    <Compile Include="Converter\VisibilityToBooleanConverter.cs" />
     <Compile Include="Dialogs\EditCustomer.xaml.cs">
       <DependentUpon>EditCustomer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\ProgressDialog.xaml.cs">
+      <DependentUpon>ProgressDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\YesNoDialog.xaml.cs">
       <DependentUpon>YesNoDialog.xaml</DependentUpon>
@@ -131,6 +135,10 @@
     <Page Include="Dialogs\EditCustomer.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\ProgressDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\YesNoDialog.xaml">
       <Generator>MSBuild:Compile</Generator>

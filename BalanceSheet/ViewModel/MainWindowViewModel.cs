@@ -9,10 +9,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace BalanceSheet.ViewModel
 {
@@ -40,6 +42,7 @@ namespace BalanceSheet.ViewModel
         private string _transactionToDate;
         private bool _customerTransactionSelectAll;
         private bool _transactionSelectAll;
+        private bool _isProgressVisible;
         private ObservableCollection<Transaction> _transactionsList = new ObservableCollection<Transaction>();
         private ICollectionView _transactionsListDataWrapper;
         private ObservableCollection<Transaction> _customerTransactionsList = new ObservableCollection<Transaction>();
@@ -384,6 +387,18 @@ namespace BalanceSheet.ViewModel
                 OnTransactionSelectAllChanged();
             }
         }
+        public bool IsProgressVisible
+        {
+            get { return _isProgressVisible; }
+            set
+            {
+                if (value != _isProgressVisible)
+                {
+                    _isProgressVisible = value;
+                    OnPropertyChanged("IsProgressVisible");
+                }
+            }
+        }
 
         public string TransactionToDate
         {
@@ -443,6 +458,7 @@ namespace BalanceSheet.ViewModel
         private void Initialize()
         {
             DarkThemeEnabled = Properties.Settings.Default.DarkThemeEnabled;
+            IsProgressVisible = false;
             //Load Data
             LoadCustomerList();
             LoadTransactionList();
@@ -475,7 +491,7 @@ namespace BalanceSheet.ViewModel
                 IsTransactionEditEnabled = false;
                 IsTransactionDeleteEnabled = false;
             }
-            OnTransactionFromDateChanged();
+            OnTransactionToDateChanged();
         }
 
         private void LoadCustomerList()
@@ -542,8 +558,8 @@ namespace BalanceSheet.ViewModel
                 foreach (var item in TransactionsList)
                 {
                     TransactionReceived += item.Received;
-                    TransactionPaid -= item.Paid;
-                    TransactionBalance += item.Amount;
+                    TransactionPaid += item.Paid;
+                    TransactionBalance += item.TransAmount;
                     item.PropertyChanged += SelectedTransactionItemOnPropertyChanged;
                 }
             }
@@ -1033,7 +1049,7 @@ namespace BalanceSheet.ViewModel
                 else
                 {
                     GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, null, null, false);
-                } 
+                }
             }
             else
             {
