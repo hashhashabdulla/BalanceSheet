@@ -47,7 +47,7 @@ namespace BalanceSheet.ViewModel
         private ICollectionView _transactionsListDataWrapper;
         private ObservableCollection<Transaction> _customerTransactionsList = new ObservableCollection<Transaction>();
         private ICollectionView _customerTransactionsListDataWrapper;
-        private List<Transaction> allTransactionsList = new List<Transaction>();
+        //private List<Transaction> allTransactionsList = new List<Transaction>();
         List<Transaction> selectedTransactionsList = new List<Transaction>();
         List<Transaction> selectedCustomerTransactionsList = new List<Transaction>();
 
@@ -498,7 +498,7 @@ namespace BalanceSheet.ViewModel
         {
             try
             {
-                CustomerList = new ObservableCollection<Customer>(JsonHelper.LoadJsonFromFile<Customer>(@"Data\CustomerData.json"));
+                CustomerList = new ObservableCollection<Customer>(SQLiteHelper.LoadCustomerList());
 
                 CustomerTransactionsList = new ObservableCollection<Transaction>();
                 CustomerTransactionsList.CollectionChanged += CustomerTransactionsList_CollectionChanged;
@@ -513,8 +513,7 @@ namespace BalanceSheet.ViewModel
         {
             try
             {
-                allTransactionsList = JsonHelper.LoadJsonFromFile<Transaction>(@"Data\TransactionData.json").OrderByDescending(o => o.TransactionDate).ToList();
-                TransactionsList = new ObservableCollection<Transaction>(allTransactionsList);
+                TransactionsList = new ObservableCollection<Transaction>(SQLiteHelper.LoadTransactionList().OrderByDescending(o => o.TransactionDate).ToList());
                 TransactionsList.CollectionChanged += TransactionsList_CollectionChanged;
                 //Call the event manually first time
                 TransactionsList_CollectionChanged(null, null);
@@ -549,20 +548,20 @@ namespace BalanceSheet.ViewModel
 
         private void TransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            //First clear all the values
-            TransactionReceived = 0;
-            TransactionPaid = 0;
-            TransactionBalance = 0;
-            if (TransactionsList != null && TransactionsList.Count > 0)
-            {
-                foreach (var item in TransactionsList)
-                {
-                    TransactionReceived += item.Received;
-                    TransactionPaid += item.Paid;
-                    TransactionBalance += item.TransAmount;
-                    item.PropertyChanged += SelectedTransactionItemOnPropertyChanged;
-                }
-            }
+            ////First clear all the values
+            //TransactionReceived = 0;
+            //TransactionPaid = 0;
+            //TransactionBalance = 0;
+            //if (TransactionsList != null && TransactionsList.Count > 0)
+            //{
+            //    foreach (var item in TransactionsList)
+            //    {
+            //        TransactionReceived += item.Received;
+            //        TransactionPaid += item.Paid;
+            //        TransactionBalance += item.TransAmount;
+            //        item.PropertyChanged += SelectedTransactionItemOnPropertyChanged;
+            //    }
+            //}
         }
 
         private void SelectedTransactionItemOnPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -614,34 +613,34 @@ namespace BalanceSheet.ViewModel
 
         private void CustomerTransactionsList_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            int customerTransactionsCount = 0;
-            if (CustomerFromDate != null && CustomerFromDate != "" && CustomerToDate != null && CustomerToDate != "")
-            {
-                customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
-            }
-            else
-            {
-                customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, null, null);
-            }
-            if (CustomerTransactionsList.Count >= customerTransactionsCount)
-            {
-                //First clear all the values
-                CustomerReceived = 0;
-                CustomerPaid = 0;
-                CustomerBalance = 0;
-                if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
-                {
-                    foreach (var item in CustomerTransactionsList)
-                    {
-                        CustomerReceived += item.Received;
-                        CustomerPaid += item.Paid;
-                        item.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
-                    }
-                    CustomerBalance = CustomerReceived + CustomerPaid;
-                }
+            //int customerTransactionsCount = 0;
+            //if (CustomerFromDate != null && CustomerFromDate != "" && CustomerToDate != null && CustomerToDate != "")
+            //{
+            //    customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate));
+            //}
+            //else
+            //{
+            //    customerTransactionsCount = GeneralHelperClass.GetTransactionsListCountByDate(SelectedCustomer, null, null);
+            //}
+            //if (CustomerTransactionsList.Count >= customerTransactionsCount)
+            //{
+            //    //First clear all the values
+            //    CustomerReceived = 0;
+            //    CustomerPaid = 0;
+            //    CustomerBalance = 0;
+            //    if (CustomerTransactionsList != null && CustomerTransactionsList.Count > 0)
+            //    {
+            //        foreach (var item in CustomerTransactionsList)
+            //        {
+            //            CustomerReceived += item.Received;
+            //            CustomerPaid += item.Paid;
+            //            item.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
+            //        }
+            //        CustomerBalance = CustomerReceived + CustomerPaid;
+            //    }
 
-                CustomerTransactionsListDataWrapper.SortDescriptions.Add(new SortDescription("TransactionDate", ListSortDirection.Ascending));
-            }
+            //    CustomerTransactionsListDataWrapper.SortDescriptions.Add(new SortDescription("TransactionDate", ListSortDirection.Ascending));
+            //}
         }
 
         private void SelectedCustomerTransactionItemOnPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -691,7 +690,7 @@ namespace BalanceSheet.ViewModel
                 if (result != null && (bool)result)
                 {
                     CreateNewCustomerViewModel customerViewModel = (CreateNewCustomerViewModel)createNewCustomerView.DataContext;
-                    var existingCustomer = CustomerList.FirstOrDefault(o => o.CustomerName == customerViewModel.CustomerName);
+                    Customer existingCustomer = CustomerList.FirstOrDefault(o => o.CustomerName == customerViewModel.CustomerName);
 
                     //If existing customer is null, then go ahead with creation, else display alert
                     if (existingCustomer == null)
@@ -702,9 +701,17 @@ namespace BalanceSheet.ViewModel
                         transactionDate = transactionDate.Date + ((DateTime)customerViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(customerViewModel.OpeningBalance);
 
-                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
+                        Customer newCustomer = GeneralHelperClass.GetCustomerObject(new Customer(), customerName, amount);
+                        Transaction newTransaction = GeneralHelperClass.GetTransactionObject(new Transaction(), customerName, description, transactionDate, amount);
+                        // Insert new transaction and update the customer details
+                        SQLiteHelper.InsertCustomerDetails(newCustomer);
+                        SQLiteHelper.InsertTransactionDetails(newTransaction);
+                        SQLiteHelper.UpdateCustomer(customerName);
+
+                        //allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
 
                         //Make newly created customer as the selected customer
+                        CustomerList.Add(newCustomer);
                         SelectedCustomer = CustomerList[CustomerList.Count - 1];
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
@@ -749,10 +756,14 @@ namespace BalanceSheet.ViewModel
                         {
                             string newCustomerName = customerViewModel.CustomerName;
 
-                            allTransactionsList = GeneralHelperClass.EditCustomerName(CustomerList, allTransactionsList, oldCustomerName, newCustomerName);
+                            SQLiteHelper.UpdateCustomerName(oldCustomerName, newCustomerName);
 
-                            //Make edited customer as the selected customer
-                            int customerIndex = CustomerList.ToList().FindIndex(o => o.CustomerName == newCustomerName);
+                            //allTransactionsList = GeneralHelperClass.EditCustomerName(CustomerList, allTransactionsList, oldCustomerName, newCustomerName);
+
+                            // Make edited customer as the selected customer
+                            int customerIndex = CustomerList.ToList().FindIndex(o => o.CustomerName == oldCustomerName);
+                            // Update customer name in the CustomerList
+                            CustomerList[customerIndex].CustomerName = newCustomerName;
                             SelectedCustomer = CustomerList[customerIndex];
                             //Refresh the transactions list
                             OnTransactionFromDateChanged();
@@ -783,7 +794,8 @@ namespace BalanceSheet.ViewModel
                     {
                         string customerName = SelectedCustomer.CustomerName;
 
-                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, null, customerName, true);
+                        //allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, null, customerName, true);
+                        SQLiteHelper.DeleteTransactionDetails(null, customerName, true);
 
                         //Select the first customer in the list after removing
                         SelectedCustomer = CustomerList.Count > 0 ? CustomerList[0] : null;
@@ -824,10 +836,22 @@ namespace BalanceSheet.ViewModel
                         transactionDate = transactionDate.Date + ((DateTime)newTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(newTransactionViewModel.Amount);
 
-                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
+                        Transaction newTransaction = GeneralHelperClass.GetTransactionObject(new Transaction(), customerName, description, transactionDate, amount);
+                        // Insert new transaction and update the customer details
+                        SQLiteHelper.InsertTransactionDetails(newTransaction);
+                        SQLiteHelper.UpdateCustomer(customerName);
+
+                        //allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if (CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        }
+                        else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -866,10 +890,28 @@ namespace BalanceSheet.ViewModel
                         transactionDate = transactionDate.Date + ((DateTime)editTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(editTransactionViewModel.Amount);
 
-                        allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
+                        Transaction oldTransaction = new Transaction(SelectedCustomerTransactionItem);
+                        Transaction updatedTransaction = GeneralHelperClass.GetTransactionObject(SelectedCustomerTransactionItem, customerName, description, transactionDate, amount);
+                        SQLiteHelper.UpdateTransactionDetails(updatedTransaction);
+                        if(oldTransaction.CustomerName != updatedTransaction.CustomerName)
+                        {
+                            // Update details of old customer if customer name is changed while editing
+                            SQLiteHelper.UpdateCustomer(oldTransaction.CustomerName);
+                        }
+                        // Update details of customer
+                        SQLiteHelper.UpdateCustomer(updatedTransaction.CustomerName);
+
+                        //allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if (CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        }
+                        else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -899,13 +941,20 @@ namespace BalanceSheet.ViewModel
                         List<Transaction> selectedList = new List<Transaction>();
                         foreach (var item in selectedCustomerTransactionsList)
                         {
-                            selectedList.Add(allTransactionsList.First(o => o.TransactionId == item.TransactionId));
+                            selectedList.Add(CustomerTransactionsList.First(o => o.TransactionId == item.TransactionId));
                         }
 
-                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
+                        //allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
+                        SQLiteHelper.DeleteTransactionDetails(selectedList, null, false);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if(CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        } else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -943,10 +992,22 @@ namespace BalanceSheet.ViewModel
                         transactionDate = transactionDate.Date + ((DateTime)newTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(newTransactionViewModel.Amount);
 
-                        allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
+                        Transaction newTransaction = GeneralHelperClass.GetTransactionObject(new Transaction(), customerName, description, transactionDate, amount);
+                        // Insert new transaction and update the customer details
+                        SQLiteHelper.InsertTransactionDetails(newTransaction);
+                        SQLiteHelper.UpdateCustomer(customerName);
+
+                        //allTransactionsList = GeneralHelperClass.CreateDetails(CustomerList, allTransactionsList, customerName, description, transactionDate, amount);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if (CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        }
+                        else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -985,10 +1046,28 @@ namespace BalanceSheet.ViewModel
                         transactionDate = transactionDate.Date + ((DateTime)editTransactionViewModel.TransactionTime).TimeOfDay;
                         double amount = double.Parse(editTransactionViewModel.Amount);
 
-                        allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
+                        Transaction oldTransaction = new Transaction(SelectedTransactionItem);
+                        Transaction updatedTransaction = GeneralHelperClass.GetTransactionObject(SelectedTransactionItem, customerName, description, transactionDate, amount);
+                        SQLiteHelper.UpdateTransactionDetails(updatedTransaction);
+                        if (oldTransaction.CustomerName != updatedTransaction.CustomerName)
+                        {
+                            // Update details of old customer if customer name is changed while editing
+                            SQLiteHelper.UpdateCustomer(oldTransaction.CustomerName);
+                        }
+                        // Update details of customer
+                        SQLiteHelper.UpdateCustomer(updatedTransaction.CustomerName);
+
+                        //allTransactionsList = GeneralHelperClass.EditDetails(CustomerList, allTransactionsList, transactionId, customerName, description, transactionDate, amount);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if (CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        }
+                        else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -1017,14 +1096,22 @@ namespace BalanceSheet.ViewModel
                         List<Transaction> selectedList = new List<Transaction>();
                         foreach (var item in selectedTransactionsList)
                         {
-                            selectedList.Add(allTransactionsList.First(o => o.TransactionId == item.TransactionId));
+                            selectedList.Add(TransactionsList.First(o => o.TransactionId == item.TransactionId));
                         }
 
 
-                        allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
+                        //allTransactionsList = GeneralHelperClass.DeleteDetails(CustomerList, allTransactionsList, selectedList, customerName, false);
+                        SQLiteHelper.DeleteTransactionDetails(selectedList, null, false);
 
                         //Reselect the customer because it will get unselected while modifying the CustomerList
-                        SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        if (CustomerList[selectedCustomerIndex].CustomerName == SelectedCustomer.CustomerName)
+                        {
+                            OnCustomerFromDateChanged();
+                        }
+                        else
+                        {
+                            SelectedCustomer = CustomerList[selectedCustomerIndex];
+                        }
                         //Refresh the transactions list
                         OnTransactionFromDateChanged();
                     }
@@ -1038,41 +1125,43 @@ namespace BalanceSheet.ViewModel
 
         private void OnCustomerFromDateChanged()
         {
+            CustomerTransactionsList.Clear();
+
             if (SelectedCustomer != null)
             {
                 if (CustomerFromDate != null && CustomerFromDate != "")
                 {
-                    CustomerToDate = CustomerFromDate;
+                    CustomerToDate = DateTime.Parse(CustomerFromDate).Add(new TimeSpan(1, 0, 0, 0)).ToShortDateString();
 
-                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate), false);
+                    //updatedTransactions = SQLiteHelper.LoadCustomerTransactionList(SelectedCustomer, CustomerFromDate, CustomerToDate);
                 }
                 else
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, null, null, false);
+                    List<Transaction> updatedTransactions = SQLiteHelper.LoadCustomerTransactionList(SelectedCustomer);
+
+                    UpdateCustomerTransactionList(updatedTransactions);
                 }
-            }
-            else
-            {
-                CustomerTransactionsList.Clear();
             }
         }
 
         private void OnCustomerToDateChanged()
         {
+            CustomerTransactionsList.Clear();
+
             if (SelectedCustomer != null)
             {
+                List<Transaction> updatedTransactions;
+
                 if (CustomerToDate != null && CustomerToDate != "" && CustomerFromDate != null && CustomerFromDate != "")
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, DateTime.Parse(CustomerFromDate), DateTime.Parse(CustomerToDate), false);
+                    updatedTransactions = SQLiteHelper.LoadCustomerTransactionList(SelectedCustomer, CustomerFromDate, CustomerToDate);
                 }
                 else
                 {
-                    GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, CustomerTransactionsList, SelectedCustomer, null, null, false);
-                } 
-            }
-            else
-            {
-                CustomerTransactionsList.Clear();
+                    updatedTransactions = SQLiteHelper.LoadCustomerTransactionList(SelectedCustomer);
+                }
+
+                UpdateCustomerTransactionList(updatedTransactions);
             }
         }
 
@@ -1082,36 +1171,88 @@ namespace BalanceSheet.ViewModel
             CustomerToDate = "";
         }
 
+        private void UpdateCustomerTransactionList(List<Transaction> updatedTransactions)
+        {
+            //First clear all the values
+            CustomerReceived = 0;
+            CustomerPaid = 0;
+            CustomerBalance = 0;
+            if (updatedTransactions != null && updatedTransactions.Count > 0)
+            {
+                foreach (Transaction transactionItem in updatedTransactions)
+                {
+                    CustomerTransactionsList.Add(transactionItem);
+
+                    CustomerReceived += transactionItem.Received;
+                    CustomerPaid += transactionItem.Paid;
+                    transactionItem.PropertyChanged += SelectedCustomerTransactionItemOnPropertyChanged;
+                }
+                CustomerBalance = CustomerReceived + CustomerPaid;
+            }
+
+            CustomerTransactionsListDataWrapper.SortDescriptions.Add(new SortDescription("TransactionDate", ListSortDirection.Ascending));
+        }
+
         private void OnTransactionFromDateChanged()
         {
+            TransactionsList.Clear();
+            
+
             if (TransactionFromDate != null && TransactionFromDate != "")
             {
-                TransactionToDate = TransactionFromDate;
+                TransactionToDate = DateTime.Parse(TransactionFromDate).Add(new TimeSpan(1, 0, 0, 0)).ToShortDateString();
 
-                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate), IsTransactionCollapsed);
+                //updatedTransactions = SQLiteHelper.LoadTransactionListByDate(IsTransactionCollapsed, TransactionFromDate, TransactionToDate);
             }
             else
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, null, null, IsTransactionCollapsed);
+                List<Transaction> updatedTransactions = SQLiteHelper.LoadTransactionListByDate(IsTransactionCollapsed);
+
+                UpdateTransactionList(updatedTransactions);
             }
         }
 
         private void OnTransactionToDateChanged()
         {
+            TransactionsList.Clear();
+            List<Transaction> updatedTransactions;
+
             if (TransactionToDate != null && TransactionToDate != "" && TransactionFromDate != null && TransactionFromDate != "")
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, DateTime.Parse(TransactionFromDate), DateTime.Parse(TransactionToDate), IsTransactionCollapsed);
+                updatedTransactions = SQLiteHelper.LoadTransactionListByDate(IsTransactionCollapsed, TransactionFromDate, TransactionToDate);
             }
             else
             {
-                GeneralHelperClass.UpdateTransactionsListByDate(allTransactionsList, TransactionsList, null, null, null, IsTransactionCollapsed);
+                updatedTransactions = SQLiteHelper.LoadTransactionListByDate(IsTransactionCollapsed);
             }
+
+            UpdateTransactionList(updatedTransactions);
         }
         
         private void OnTransactionClearFilterAsync()
         {
             TransactionFromDate = "";
             TransactionToDate = "";
+        }
+
+        private void UpdateTransactionList(List<Transaction> updatedTransactions)
+        {
+            //First clear all the values
+            TransactionReceived = 0;
+            TransactionPaid = 0;
+            TransactionBalance = 0;
+            if (updatedTransactions != null && updatedTransactions.Count > 0)
+            {
+                foreach (Transaction transactionItem in updatedTransactions)
+                {
+                    TransactionsList.Add(transactionItem);
+
+                    TransactionReceived += transactionItem.Received;
+                    TransactionPaid += transactionItem.Paid;
+                    transactionItem.PropertyChanged += SelectedTransactionItemOnPropertyChanged;
+                }
+                TransactionBalance = TransactionReceived + TransactionPaid;
+            }
         }
 
         private void OnPrintClick()

@@ -13,8 +13,6 @@ namespace BalanceSheet.Helper
         bool isTransactionCollapsed;
         WebBrowser webBrowser = new WebBrowser();
         List<Transaction> transactionsList = new List<Transaction>();
-        private List<Transaction> list;
-        private bool v;
 
         public PrintHelper(List<Transaction> transactionsList, bool isCustomerPrint, bool isTransactionCollapsed)
         {

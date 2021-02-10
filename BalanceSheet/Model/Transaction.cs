@@ -147,6 +147,25 @@ namespace BalanceSheet.Model
             }
         }
 
+        public Transaction()
+        {
+            // Empty mandatory constructor
+        }
+
+        public Transaction(Transaction transaction)
+        {
+            this.TransactionId = transaction.TransactionId;
+            this.CustomerName = transaction.CustomerName;
+            this.Description = transaction.Description;
+            this.Received = transaction.Received;
+            this.Paid = transaction.Paid;
+            this.Amount = transaction.Amount;
+            this.TransactionDate = transaction.TransactionDate;
+            this.CreateDate = transaction.CreateDate;
+            this.ModDate = transaction.ModDate;
+            this.IsSelected = transaction.IsSelected;
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged(string propertyName)
